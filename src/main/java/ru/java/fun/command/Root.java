@@ -13,4 +13,24 @@ import picocli.CommandLine;
 )
 public class Root {
 
+    @CommandLine.Option(
+            names = {"-u", "--uri"},
+            description = "Url for api.kinopoisk.dev"
+    )
+    protected String uri = "https://api.kinopoisk.dev/v1.4";
+
+    @CommandLine.Option(
+            names = {"-t", "--token"},
+            description = "Token for api.kinopoisk.dev",
+            required = true
+    )
+    protected String token;
+
+    public String getUri() {
+        return uri;
+    }
+
+    public String getToken() {
+        return token;
+    }
 }

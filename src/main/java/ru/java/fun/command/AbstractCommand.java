@@ -4,23 +4,14 @@ import picocli.CommandLine;
 
 import java.util.concurrent.Callable;
 
+@CommandLine.Command
 public abstract class AbstractCommand implements Callable<Integer> {
+
+    @CommandLine.ParentCommand
+    Root root;
 
     @CommandLine.Spec
     protected CommandLine.Model.CommandSpec spec;
-
-    @CommandLine.Option(
-            names = {"-u", "--uri"},
-            description = "Url for api.kinopoisk.dev"
-    )
-    protected String uri = "https://api.kinopoisk.dev/v1.4";
-
-    @CommandLine.Option(
-            names = {"-t", "--token"},
-            description = "Token for api.kinopoisk.dev",
-            required = true
-    )
-    protected String token;
 
     protected void println(String line) {
         spec.commandLine()
@@ -34,4 +25,15 @@ public abstract class AbstractCommand implements Callable<Integer> {
                 .printf(format, args);
     }
 
+    public CommandLine.Model.CommandSpec getSpec() {
+        return spec;
+    }
+
+    public String getUri() {
+        return root.getUri();
+    }
+
+    public String getToken() {
+        return root.getToken();
+    }
 }

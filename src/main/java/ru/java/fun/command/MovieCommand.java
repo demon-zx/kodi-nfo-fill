@@ -36,11 +36,20 @@ public class MovieCommand extends AbstractCommand {
     )
     private Path file;
 
+    public String getName() {
+        return name;
+    }
+
+    public Path getFile() {
+        return file;
+    }
+
     @Override
     public Integer call() throws Exception {
-        Api api = new Api(uri, token, null, Duration.ofSeconds(15), Duration.ofSeconds(15));
+        Api api = new Api(getUri(), getToken(), null, Duration.ofSeconds(15), Duration.ofSeconds(15));
+        var file = getFile();
         String query = Objects.requireNonNullElseGet(
-                name,
+                getName(),
                 () -> file.getName(file.getNameCount() - 1)
                         .toString()
         );
