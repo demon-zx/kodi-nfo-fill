@@ -23,9 +23,6 @@ import java.util.concurrent.Callable;
 )
 public class MovieCommand extends AbstractCommand {
 
-    @CommandLine.ParentCommand
-    private Root root;
-
     @Option(
             names = {"-n", "--name"},
             description = "Movie name"
@@ -38,31 +35,6 @@ public class MovieCommand extends AbstractCommand {
             required = true
     )
     private Path file;
-
-
-    public Root getRoot() {
-        return root;
-    }
-
-    public void setRoot(Root root) {
-        this.root = root;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public Path getFile() {
-        return file;
-    }
-
-    public void setFile(Path file) {
-        this.file = file;
-    }
 
     @Override
     public Integer call() throws Exception {
