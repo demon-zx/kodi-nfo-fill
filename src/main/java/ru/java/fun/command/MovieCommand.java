@@ -19,23 +19,12 @@ import java.util.concurrent.Callable;
 
 @CommandLine.Command(
         name = "movie",
-        mixinStandardHelpOptions = true,
         description = "Scrap movie info"
 )
-public class MovieCommand implements Callable<Integer> {
+public class MovieCommand extends AbstractCommand {
 
-    @Option(
-            names = {"-u", "--uri"},
-            description = "Url for api.kinopoisk.dev"
-    )
-    private String uri = "https://api.kinopoisk.dev/v1.4";
-
-    @Option(
-            names = {"-t", "--token"},
-            description = "Token for api.kinopoisk.dev",
-            required = true
-    )
-    private String token;
+    @CommandLine.ParentCommand
+    private Root root;
 
     @Option(
             names = {"-n", "--name"},
@@ -50,6 +39,31 @@ public class MovieCommand implements Callable<Integer> {
     )
     private Path file;
 
+
+    public Root getRoot() {
+        return root;
+    }
+
+    public void setRoot(Root root) {
+        this.root = root;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public Path getFile() {
+        return file;
+    }
+
+    public void setFile(Path file) {
+        this.file = file;
+    }
+
     @Override
     public Integer call() throws Exception {
         Api api = new Api(uri, token, null, Duration.ofSeconds(15), Duration.ofSeconds(15));
@@ -63,7 +77,7 @@ public class MovieCommand implements Callable<Integer> {
                 .stream()
                 .findFirst()
                 .orElseThrow(() -> new ExecutionException("Not found first."));
-        System.out.printf("Found: %s, %s.%n", first.getName(), first.getYear());
+        printf("Found: %s, %s.%n", first.getName(), first.getYear());
         Movie movie = api.findMovieById(first.getId());
         MovieNfo nfo = NfoGenerator.movie(movie);
         NfoSaver.save(file, nfo);
