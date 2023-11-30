@@ -71,6 +71,12 @@ public class Api {
         return request(resource, SearchResult.class);
     }
 
+    public Movie findMovieById(long id) throws IOException {
+        ///v1.4/movie/680529
+        String resource = "movie/" + id;
+        return request(resource, Movie.class);
+    }
+
     String buildQuery(Map<String, ?> queryParameters) {
         StringBuilder sb = new StringBuilder(" ");
         for (Map.Entry<String, ?> e : queryParameters.entrySet()) {

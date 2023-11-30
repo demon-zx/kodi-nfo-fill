@@ -27,7 +27,7 @@ import javax.xml.bind.annotation.*;
  */
 @XmlRootElement(name = "uniqueid")
 @XmlAccessorType(XmlAccessType.FIELD)
-public class UniqueId {
+public class UniqueIdNfo {
     @XmlAttribute
     private String type;
     @XmlAttribute(name = "default")

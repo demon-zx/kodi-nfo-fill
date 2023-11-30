@@ -4,9 +4,10 @@ import ru.java.fun.ExecutionException;
 import ru.java.fun.Input;
 import ru.java.fun.kinopoisk.dev.Api;
 import ru.java.fun.kinopoisk.dev.Document;
+import ru.java.fun.kinopoisk.dev.Movie;
 import ru.java.fun.kinopoisk.dev.SearchResult;
 import ru.java.fun.nfo.MovieNfo;
-import ru.java.fun.nfo.Thumb;
+import ru.java.fun.nfo.ThumbNfo;
 
 import java.io.IOException;
 import java.net.URI;
@@ -21,16 +22,17 @@ public class FilmCommand implements Command {
         Api api = new Api(input.getUri(), input.getToken(), null, Duration.ofSeconds(15), Duration.ofSeconds(15));
         String query = Objects.requireNonNullElse(input.getFilmName(), input.getFileName());
         SearchResult search = api.search(query, 1, 1);
-        Document film = search.getDocs()
+        Document first = search.getDocs()
                 .stream()
                 .findFirst()
-                .orElseThrow(() -> new ExecutionException("Not found film."));
-        System.out.printf("Found: %s, %s.%n", film.getName(), film.getYear());
-        MovieNfo movie = NfoGenerator.movie(film);
-        NfoSaver.save(input, movie);
-        for (Thumb thumb : movie.getThumbs()) {
+                .orElseThrow(() -> new ExecutionException("Not found first."));
+        System.out.printf("Found: %s, %s.%n", first.getName(), first.getYear());
+        Movie movie = api.findMovieById(first.getId());
+        MovieNfo nfo = NfoGenerator.movie(movie);
+        NfoSaver.save(input, nfo);
+        for (ThumbNfo thumb : nfo.getThumbs()) {
             URI uri = URI.create(thumb.getPreview());
-            Thumb.Aspect aspect = thumb.getAspect();
+            ThumbNfo.Aspect aspect = thumb.getAspect();
             Path path = Paths.get(input.getFileName() + "-" + aspect.name() + ".jpg");
             api.saveImage(path, uri);
         }

@@ -21,7 +21,6 @@ public class Document {
     //    private final boolean isSeries;
     private final Integer totalSeriesLength = null;
     private final Integer seriesLength = null;
-    private final String ratingMpaa = "r";
     private final int ageRating;
     private final Integer top10 = null;
     private final Integer top250 = null;
@@ -119,10 +118,6 @@ public class Document {
 
     public Integer getSeriesLength() {
         return seriesLength;
-    }
-
-    public String getRatingMpaa() {
-        return ratingMpaa;
     }
 
     public int getAgeRating() {

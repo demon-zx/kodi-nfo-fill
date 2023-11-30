@@ -4,7 +4,7 @@ import javax.xml.bind.annotation.*;
 
 @XmlRootElement
 @XmlAccessorType(XmlAccessType.FIELD)
-public class Rating {
+public class RatingNfo {
     @XmlAttribute
     private String name;
     @XmlAttribute

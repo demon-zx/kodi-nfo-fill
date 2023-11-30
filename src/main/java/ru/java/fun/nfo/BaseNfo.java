@@ -8,7 +8,7 @@ import java.util.List;
 public abstract class BaseNfo {
 
     @XmlElement(name = "uniqueid", required = true)
-    private UniqueId uniqueId;
+    private UniqueIdNfo uniqueId;
 
     @XmlElement(name = "title", required = true)
     private String title;
@@ -22,6 +22,9 @@ public abstract class BaseNfo {
     @XmlElement(name = "plot")
     private String plot;
 
+    @XmlElement(name = "tagline")
+    private String tagline;
+
     /**
      * Premier date: yyyy-MM-dd
      */
@@ -30,7 +33,7 @@ public abstract class BaseNfo {
 
     @XmlElementWrapper(name = "ratings")
     @XmlElement(name = "rating")
-    private List<Rating> ratings;
+    private List<RatingNfo> ratings;
 
     @XmlElement(name = "userrating")
     private Integer userRating;
@@ -39,7 +42,7 @@ public abstract class BaseNfo {
     private Integer top250;
 
     @XmlElement(name = "thumb ")
-    private List<Thumb> thumbs;
+    private List<ThumbNfo> thumbs;
 
     @XmlElement(name = "runtime")
     private String runtime;
@@ -72,11 +75,11 @@ public abstract class BaseNfo {
 </actor>
      */
 
-    public UniqueId getUniqueId() {
+    public UniqueIdNfo getUniqueId() {
         return uniqueId;
     }
 
-    public void setUniqueId(UniqueId uniqueId) {
+    public void setUniqueId(UniqueIdNfo uniqueId) {
         this.uniqueId = uniqueId;
     }
 
@@ -112,6 +115,14 @@ public abstract class BaseNfo {
         this.plot = plot;
     }
 
+    public String getTagline() {
+        return tagline;
+    }
+
+    public void setTagline(String tagline) {
+        this.tagline = tagline;
+    }
+
     public LocalDate getPremiered() {
         return premiered;
     }
@@ -120,11 +131,11 @@ public abstract class BaseNfo {
         this.premiered = premiered;
     }
 
-    public List<Rating> getRatings() {
+    public List<RatingNfo> getRatings() {
         return ratings;
     }
 
-    public void setRatings(List<Rating> ratings) {
+    public void setRatings(List<RatingNfo> ratings) {
         this.ratings = ratings;
     }
 
@@ -144,11 +155,11 @@ public abstract class BaseNfo {
         this.top250 = top250;
     }
 
-    public List<Thumb> getThumbs() {
+    public List<ThumbNfo> getThumbs() {
         return thumbs;
     }
 
-    public void setThumbs(List<Thumb> thumbs) {
+    public void setThumbs(List<ThumbNfo> thumbs) {
         this.thumbs = thumbs;
     }
 

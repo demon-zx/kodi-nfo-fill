@@ -1,17 +1,15 @@
 package ru.java.fun.command;
 
-import ru.java.fun.kinopoisk.dev.Document;
-import ru.java.fun.kinopoisk.dev.Image;
-import ru.java.fun.kinopoisk.dev.ItemName;
-import ru.java.fun.kinopoisk.dev.Votes;
-import ru.java.fun.nfo.MovieNfo;
-import ru.java.fun.nfo.Rating;
-import ru.java.fun.nfo.Thumb;
-import ru.java.fun.nfo.UniqueId;
+import ru.java.fun.kinopoisk.dev.*;
+import ru.java.fun.nfo.*;
 
 import java.time.LocalDate;
+import java.time.OffsetDateTime;
+import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 public final class NfoGenerator {
@@ -20,7 +18,7 @@ public final class NfoGenerator {
 
     }
 
-    public static MovieNfo movie(Document document) {
+    public static MovieNfo movie(Movie document) {
         MovieNfo movie = new MovieNfo();
         movie.setTitle(document.getName());
         movie.setOriginalTitle(Objects.requireNonNullElse(document.getAlternativeName(), document.getName()));
@@ -28,47 +26,71 @@ public final class NfoGenerator {
                 .stream()
                 .findFirst()
                 .ifPresent(c -> movie.setCountry(c.getName()));
-        UniqueId uniqueId = new UniqueId();
+        UniqueIdNfo uniqueId = new UniqueIdNfo();
         uniqueId.setType("kp");
         uniqueId.setDefaultValue(true);
         uniqueId.setValue(String.valueOf(document.getId()));
         movie.setUniqueId(uniqueId);
         movie.setOutline(document.getShortDescription());
         movie.setPlot(document.getDescription());
-        movie.setPremiered(LocalDate.of(document.getYear(),1,1));
+        movie.setTagline(document.getSlogan());
+        movie.setPremiered(premiere(document));
         movie.setRatings(ratings(document.getRating(), document.getVotes()));
         movie.setTop250(document.getTop250());
-        movie.setThumbs(List.of(thumb(Thumb.Aspect.poster, document.getPoster())));
+        movie.setThumbs(List.of(thumb(ThumbNfo.Aspect.poster, document.getPoster())));
 //        movie.setFanArt();
-        List<String> genres = document.getGenres()
+        movie.setGenre(named(document.getGenres()));
+        movie.setStudio(named(document.getProductionCompanies()));
+        var personsByProfession = Optional.ofNullable(document.getPersons())
                 .stream()
-                .map(ItemName::getName)
-                .collect(Collectors.toList());
-        movie.setGenre(genres);
-//        movie.setCredits();
-//        movie.setDirector();
-//        movie.setStudio();
+                .flatMap(Collection::stream)
+                .collect(Collectors.groupingBy(Person::getEnProfession));
+        movie.setDirector(named(personsByProfession.get("director")));
+        movie.setCredits(named(personsByProfession.get("writer")));
+        movie.setActors(actors(personsByProfession.get("actor")));
 //        movie.setTrailer();
-//        movie.setStars();
 
         return movie;
     }
 
-    public static Thumb thumb(Thumb.Aspect aspect, Image image) {
-        Thumb t = new Thumb();
+    private static List<ActorNfo> actors(List<Person> actor) {
+        AtomicInteger order = new AtomicInteger(0);
+        return Optional.ofNullable(actor)
+                .stream()
+                .flatMap(Collection::stream)
+                .map(a -> new ActorNfo(a.getName(), a.getDescription(), order.getAndIncrement(), a.getPhoto()))
+                .collect(Collectors.toList());
+    }
+
+    private static LocalDate premiere(Movie document) {
+        return Optional.ofNullable(document.getPremiere())
+                .map(Premiere::getWorld)
+                .map(OffsetDateTime::toLocalDate)
+                .orElse(null);
+    }
+
+    private static List<String> named(List<? extends Named> entries) {
+        return Objects.requireNonNullElse(entries, List.<Named>of())
+                .stream()
+                .map(Named::getName)
+                .collect(Collectors.toList());
+    }
+
+    public static ThumbNfo thumb(ThumbNfo.Aspect aspect, Image image) {
+        ThumbNfo t = new ThumbNfo();
         t.setAspect(aspect);
         t.setPreview(image.getUrl());
         return t;
     }
 
-    public static List<Rating> ratings(ru.java.fun.kinopoisk.dev.Rating source, Votes votes) {
-        Rating kp = new Rating();
+    public static List<RatingNfo> ratings(ru.java.fun.kinopoisk.dev.Rating source, Votes votes) {
+        RatingNfo kp = new RatingNfo();
         kp.setMax(10);
         kp.setName("kinopoisk");
         kp.setDefaultValue(true);
         kp.setValue(source.getKp());
         kp.setVotes(Objects.requireNonNullElse(votes.getKp(), 0));
-        Rating imdb = new Rating();
+        RatingNfo imdb = new RatingNfo();
         imdb.setName("imdb");
         imdb.setValue(source.getImdb());
         imdb.setVotes(Objects.requireNonNullElse(votes.getImdb(), 0));

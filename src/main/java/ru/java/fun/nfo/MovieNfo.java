@@ -24,11 +24,9 @@ public class MovieNfo extends BaseNfo {
     @XmlElement(name = "showlink")
     private String showLink;
 
-    /**
-     * Stars persons split by  ' / '
-     */
-    @XmlElement(name = "stars")
-    private String stars;
+    @XmlElement(name = "actor")
+    private List<ActorNfo> actors;
+
 /*
 film collections
 <set>
@@ -69,11 +67,11 @@ film collections
         this.showLink = showLink;
     }
 
-    public String getStars() {
-        return stars;
+    public List<ActorNfo> getActors() {
+        return actors;
     }
 
-    public void setStars(String stars) {
-        this.stars = stars;
+    public void setActors(List<ActorNfo> actors) {
+        this.actors = actors;
     }
 }

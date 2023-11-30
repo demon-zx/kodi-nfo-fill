@@ -7,7 +7,7 @@ import javax.xml.bind.annotation.XmlRootElement;
 
 @XmlRootElement(name = "thumb")
 @XmlAccessorType(XmlAccessType.FIELD)
-public class Thumb {
+public class ThumbNfo {
 
     @XmlAttribute
     private Aspect aspect;
