@@ -2,6 +2,7 @@ package ru.java.fun.command;
 
 import ru.java.fun.Input;
 import ru.java.fun.nfo.MovieNfo;
+import ru.java.fun.util.FileUtil;
 
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
@@ -22,12 +23,12 @@ public class NfoSaver {
     private NfoSaver() {
     }
 
-    public static void save(Input input, MovieNfo movie) {
+    public static void save(Path original, MovieNfo movie) {
         try {
             JAXBContext ctx = JAXBContext.newInstance(MovieNfo.class);
             Marshaller marshaller = ctx.createMarshaller();
             marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, true);
-            Path file = Paths.get(input.getFileName() + ".nfo");
+            Path file = FileUtil.replaceExtension(original,".nfo");
             Files.deleteIfExists(file);
             try (Writer w = Files.newBufferedWriter(file, UTF_8, WRITE, CREATE_NEW)) {
                 marshaller.marshal(movie, w);

@@ -4,8 +4,8 @@ import ru.java.fun.Input;
 
 import java.io.IOException;
 
-public interface Command {
+public interface Command<I> {
 
-    void execute(Input input) throws IOException;
+    void execute(I input) throws IOException;
 
 }
