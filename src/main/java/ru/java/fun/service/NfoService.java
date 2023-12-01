@@ -26,17 +26,17 @@ public class NfoService {
     }
 
     public void fill(Path file, String name) throws IOException {
+        Path fileName = file.getName(file.getNameCount() - 1);
         String query = Objects.requireNonNullElseGet(
                 name,
-                () -> file.getName(file.getNameCount() - 1)
-                        .toString()
+                fileName::toString
         );
         SearchResult search = api.search(query, 1, 1);
         Document first = search.getDocs()
                 .stream()
                 .findFirst()
                 .orElseThrow(() -> new ExecutionException("Not found first."));
-        log.printf(Logger.Level.INFO, "For %s found: %s, %s.%n", file, first.getName(), first.getYear());
+        log.printf(Logger.Level.INFO, "For %s found: %s, %s.%n", fileName, first.getName(), first.getYear());
         Movie movie = api.findMovieById(first.getId());
         MovieNfo nfo = NfoGenerator.movie(movie);
         NfoFiles.save(file, nfo);
