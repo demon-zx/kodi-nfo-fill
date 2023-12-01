@@ -1,6 +1,7 @@
 package ru.java.fun.nfo;
 
 import javax.xml.bind.annotation.*;
+import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -29,6 +30,7 @@ public abstract class BaseNfo {
      * Premier date: yyyy-MM-dd
      */
     @XmlElement(name = "premiered")
+    @XmlJavaTypeAdapter(LocalDateAdapter.class)
     private LocalDate premiered;
 
     @XmlElementWrapper(name = "ratings")

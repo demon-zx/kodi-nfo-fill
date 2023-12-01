@@ -24,11 +24,25 @@ class FileUtilTest {
     }
 
     @Test
-    void replaceWithoutParentxtension() {
+    void replaceWithoutParentExtension() {
         Path file  = Path.of("movie-2023.avi");
         Path expected  = Path.of("movie-2023.nfo");
         Path actual = FileUtil.replaceExtension(file, ".nfo");
         Assertions.assertEquals(expected, actual);
+    }
+
+    @Test
+    void extractExtension() {
+        Path file  = Path.of("movie-2023.avi");
+        String actual = FileUtil.extractExtension(file);
+        Assertions.assertEquals("avi", actual);
+    }
+
+    @Test
+    void extractEmptyExtension() {
+        Path file  = Path.of("movie-2023");
+        String actual = FileUtil.extractExtension(file);
+        Assertions.assertEquals("", actual);
     }
 
 }

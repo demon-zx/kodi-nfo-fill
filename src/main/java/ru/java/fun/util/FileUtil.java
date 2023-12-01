@@ -26,4 +26,14 @@ public final class FileUtil {
                 .orElseGet(() -> Path.of(newName));
     }
 
+    public static String extractExtension(Path file) {
+        String name = file.getFileName()
+                .toString();
+        int index = name.lastIndexOf('.');
+        if (index > 0) {
+            return name.substring(index + 1);
+        }
+        return "";
+    }
+
 }

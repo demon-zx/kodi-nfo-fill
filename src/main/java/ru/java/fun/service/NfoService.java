@@ -39,7 +39,7 @@ public class NfoService {
         log.printf("Found: %s, %s.%n", first.getName(), first.getYear());
         Movie movie = api.findMovieById(first.getId());
         MovieNfo nfo = NfoGenerator.movie(movie);
-        NfoSaver.save(file, nfo);
+        NfoFiles.save(file, nfo);
         for (ThumbNfo thumb : nfo.getThumbs()) {
             URI uri = URI.create(thumb.getPreview());
             ThumbNfo.Aspect aspect = thumb.getAspect();
