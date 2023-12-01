@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @CommandLine.Command(
         name = "movies",
@@ -65,7 +66,14 @@ public class MoviesCommand extends AbstractCommand {
                 Path nfo = FileUtil.replaceExtension(file, ".nfo");
                 if (Files.exists(nfo)) {
                     MovieNfo exists = NfoFiles.load(nfo);
-                    name = exists.getOriginalTitle();
+                    name = Stream.of(
+                                    exists.getOriginalTitle(),
+                                    exists.getTitle()
+                            )
+                            .filter(Objects::nonNull)
+                            .filter(s -> !s.isBlank())
+                            .findFirst()
+                            .orElse(null);
                 }
             }
             service.fill(file, name);
