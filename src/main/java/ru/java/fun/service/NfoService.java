@@ -41,10 +41,12 @@ public class NfoService {
         MovieNfo nfo = NfoGenerator.movie(movie);
         NfoFiles.save(file, nfo);
         for (ThumbNfo thumb : nfo.getThumbs()) {
-            URI uri = URI.create(thumb.getPreview());
-            ThumbNfo.Aspect aspect = thumb.getAspect();
-            Path path = FileUtil.replaceExtension(file, "-" + aspect.name() + ".jpg");
-            api.saveImage(path, uri);
+            if (thumb.getPreview() != null) {
+                URI uri = URI.create(thumb.getPreview());
+                ThumbNfo.Aspect aspect = thumb.getAspect();
+                Path path = FileUtil.replaceExtension(file, "-" + aspect.name() + ".jpg");
+                api.saveImage(path, uri);
+            }
         }
     }
 }
