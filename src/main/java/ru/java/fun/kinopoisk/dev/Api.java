@@ -8,6 +8,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.fasterxml.jackson.module.paramnames.ParameterNamesModule;
 import org.apache.commons.io.IOUtils;
+import ru.java.fun.service.Logger;
 
 import java.io.*;
 import java.net.URI;
@@ -31,6 +32,7 @@ public class Api {
 
     private final String uri;
     private final String token;
+    private final Logger log;
     private final Function<Reader, Reader> responseWrapper;
 
     private final Duration readTimeout;
@@ -41,12 +43,14 @@ public class Api {
     public Api(
             String uri,
             String token,
+            Logger log,
             Function<Reader, Reader> responseWrapper,
             Duration connectionTimeout,
             Duration readTimeout
     ) {
         this.uri = uri.endsWith("/") ? uri : uri + "/";
         this.token = token;
+        this.log = log;
         this.responseWrapper = Objects.requireNonNullElseGet(responseWrapper, () -> r -> r);
         this.readTimeout = readTimeout;
         mapper = new ObjectMapper();
@@ -97,7 +101,7 @@ public class Api {
             String resource,
             Class<T> responseClazz
     ) throws IOException {
-        System.out.println(">>> GET " + resource);
+        log.println(Logger.Level.DEBUG, ">>> GET " + resource);
         var request = HttpRequest.newBuilder()
                 .uri(URI.create(uri + resource))
                 .header("X-API-KEY", token)

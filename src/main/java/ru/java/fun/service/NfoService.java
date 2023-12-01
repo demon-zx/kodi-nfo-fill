@@ -36,7 +36,7 @@ public class NfoService {
                 .stream()
                 .findFirst()
                 .orElseThrow(() -> new ExecutionException("Not found first."));
-        log.printf("For %s found: %s, %s.%n", file, first.getName(), first.getYear());
+        log.printf(Logger.Level.INFO, "For %s found: %s, %s.%n", file, first.getName(), first.getYear());
         Movie movie = api.findMovieById(first.getId());
         MovieNfo nfo = NfoGenerator.movie(movie);
         NfoFiles.save(file, nfo);
