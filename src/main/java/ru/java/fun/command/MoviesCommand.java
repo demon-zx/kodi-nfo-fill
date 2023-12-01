@@ -45,6 +45,11 @@ public class MoviesCommand extends AbstractCommand {
     )
     private Set<String> extensions;
     @Option(
+            names = {"-u", "--update"},
+            description = "Update exists, else scan only new files"
+    )
+    private boolean update;
+    @Option(
             names = {"-f", "--force"},
             description = "Force scan"
     )
@@ -62,13 +67,14 @@ public class MoviesCommand extends AbstractCommand {
                 .collect(Collectors.toList());
         for (Path file : files) {
             String name = null;
-            if (!force) {
-                Path nfo = FileUtil.replaceExtension(file, ".nfo");
-                if (Files.exists(nfo)) {
-                    MovieNfo exists = NfoFiles.load(nfo);
+            Path nfoFile = FileUtil.replaceExtension(file, ".nfo");
+            boolean exists = Files.exists(nfoFile);
+            if (exists) {
+                if (!force) {
+                    MovieNfo nfo = NfoFiles.load(nfoFile);
                     name = Stream.of(
-                                    exists.getOriginalTitle(),
-                                    exists.getTitle()
+                                    nfo.getOriginalTitle(),
+                                    nfo.getTitle()
                             )
                             .filter(Objects::nonNull)
                             .filter(s -> !s.isBlank())
@@ -76,7 +82,9 @@ public class MoviesCommand extends AbstractCommand {
                             .orElse(null);
                 }
             }
-            service.fill(file, name);
+            if(!exists || update) {
+                service.fill(file, name);
+            }
         }
         return 0;
     }
