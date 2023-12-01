@@ -8,7 +8,8 @@ import picocli.CommandLine;
         showDefaultValues = true,
         description = "Scrap media info and generate nfo files for kodi",
         subcommands = {
-                MovieCommand.class
+                MovieCommand.class,
+                MoviesCommand.class
         }
 )
 public class Root {

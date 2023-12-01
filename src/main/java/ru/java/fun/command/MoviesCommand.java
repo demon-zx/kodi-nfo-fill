@@ -9,9 +9,6 @@ import ru.java.fun.kinopoisk.dev.Movie;
 import ru.java.fun.kinopoisk.dev.SearchResult;
 import ru.java.fun.nfo.MovieNfo;
 import ru.java.fun.nfo.ThumbNfo;
-import ru.java.fun.service.NfoGenerator;
-import ru.java.fun.service.NfoSaver;
-import ru.java.fun.service.NfoService;
 import ru.java.fun.util.FileUtil;
 
 import java.net.URI;
@@ -20,38 +17,27 @@ import java.time.Duration;
 import java.util.Objects;
 
 @CommandLine.Command(
-        name = "movie",
-        aliases = "mv",
+        name = "movies",
+        aliases = "mvs",
         mixinStandardHelpOptions = true,
-        description = "Scrap movie info"
+        description = "Scrap movies info in directory"
 )
-public class MovieCommand extends AbstractCommand {
+public class MoviesCommand extends AbstractCommand {
 
     @Option(
-            names = {"-n", "--name"},
-            description = "Movie name"
-    )
-    private String name;
-
-    @Option(
-            names = {"-f", "--file-name"},
-            description = "File",
+            names = {"-d", "--directory"},
+            description = "Directory with movies",
             required = true
     )
-    private Path file;
+    private Path directory;
 
-    public String getName() {
-        return name;
-    }
-
-    public Path getFile() {
-        return file;
+    public Path getDirectory() {
+        return directory;
     }
 
     @Override
     public Integer call() throws Exception {
-        NfoService service = new NfoService(log(), api());
-        service.fill(getFile(), getName());
+
         return 0;
     }
 

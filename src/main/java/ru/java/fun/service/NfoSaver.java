@@ -1,4 +1,4 @@
-package ru.java.fun.command;
+package ru.java.fun.service;
 
 import ru.java.fun.Input;
 import ru.java.fun.nfo.MovieNfo;
