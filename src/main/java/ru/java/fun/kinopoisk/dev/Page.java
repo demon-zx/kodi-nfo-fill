@@ -5,16 +5,16 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 
 import java.util.List;
 
-public class SearchResult {
+public class Page<T> {
 
     private final int total;
     private final int limit;
     private final int page;
     private final int pages;
-    private final List<Document> docs;
+    private final List<T> docs;
 
     @JsonCreator
-    public SearchResult(int total, int limit, int page, int pages, List<Document> docs) {
+    public Page(int total, int limit, int page, int pages, List<T> docs) {
         this.total = total;
         this.limit = limit;
         this.page = page;
@@ -38,7 +38,7 @@ public class SearchResult {
         return pages;
     }
 
-    public List<Document> getDocs() {
+    public List<T> getDocs() {
         return docs;
     }
 }

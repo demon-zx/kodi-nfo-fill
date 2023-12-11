@@ -2,21 +2,13 @@ package ru.java.fun.command;
 
 import picocli.CommandLine;
 import picocli.CommandLine.Option;
-import ru.java.fun.ExecutionException;
-import ru.java.fun.kinopoisk.dev.Api;
-import ru.java.fun.kinopoisk.dev.Document;
-import ru.java.fun.kinopoisk.dev.Movie;
-import ru.java.fun.kinopoisk.dev.SearchResult;
 import ru.java.fun.nfo.MovieNfo;
-import ru.java.fun.nfo.ThumbNfo;
 import ru.java.fun.service.NfoFiles;
 import ru.java.fun.service.NfoService;
 import ru.java.fun.util.FileUtil;
 
-import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.time.Duration;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -83,7 +75,7 @@ public class MoviesCommand extends AbstractCommand {
                 }
             }
             if(!exists || update) {
-                service.fill(file, name);
+                service.fillMovie(file, name);
             }
         }
         return 0;

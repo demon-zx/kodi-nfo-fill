@@ -1,6 +1,7 @@
 package ru.java.fun.kinopoisk.dev;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.util.List;
 
@@ -18,7 +19,8 @@ public class Document {
     private final String description;
     private final String shortDescription;
     private final Integer movieLength;
-    //    private final boolean isSeries;
+    @JsonProperty("isSeries")
+    private final boolean serial;
     private final Integer totalSeriesLength = null;
     private final Integer seriesLength = null;
     private final int ageRating;
@@ -46,6 +48,7 @@ public class Document {
             String description,
             String shortDescription,
             Integer movieLength,
+            boolean serial,
             int ageRating,
             int typeNumber,
             Image logo,
@@ -65,6 +68,7 @@ public class Document {
         this.description = description;
         this.shortDescription = shortDescription;
         this.movieLength = movieLength;
+        this.serial = serial;
         this.ageRating = ageRating;
         this.typeNumber = typeNumber;
         this.logo = logo;
@@ -110,6 +114,10 @@ public class Document {
 
     public Integer getMovieLength() {
         return movieLength;
+    }
+
+    public boolean isSerial() {
+        return serial;
     }
 
     public Integer getTotalSeriesLength() {

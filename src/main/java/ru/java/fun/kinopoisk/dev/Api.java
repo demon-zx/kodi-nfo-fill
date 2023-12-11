@@ -3,23 +3,29 @@ package ru.java.fun.kinopoisk.dev;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.fasterxml.jackson.module.paramnames.ParameterNamesModule;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.function.FailableFunction;
 import ru.java.fun.service.Logger;
 
 import java.io.*;
+import java.lang.reflect.Type;
 import java.net.URI;
 import java.net.URLEncoder;
 import java.net.http.HttpClient;
+import java.net.http.HttpHeaders;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Function;
@@ -29,6 +35,7 @@ import static java.nio.file.StandardOpenOption.WRITE;
 
 public class Api {
     private static final String CONTENT_TYPE = "application/json";
+    private static final int PAGE_SIZE = 25;
 
     private final String uri;
     private final String token;
@@ -39,6 +46,10 @@ public class Api {
 
     private final ObjectMapper mapper;
     private final HttpClient httpClient;
+    private final TypeReference<Page<Document>> TR_SEARCH = new TypeReference<>() {
+    };
+    private final TypeReference<Page<Season>> TR_SEASONS = new TypeReference<>() {
+    };
 
     public Api(
             String uri,
@@ -66,19 +77,42 @@ public class Api {
                 .build();
     }
 
-    public SearchResult search(String name, int page, int limit) throws IOException {
+    static <T> List<T> all(FailableFunction<Integer, Page<T>, IOException> function) throws IOException {
+        int number = 0;
+        int all = 1;
+        List<T> result = new ArrayList<>();
+        while (number < all) {
+            Page<T> page = function.apply(++number);
+            result.addAll(page.getDocs());
+            all = page.getPages();
+        }
+        return result;
+    }
+
+    public Page<Document> search(String name, int page, int limit) throws IOException {
         String resource = "movie/search?" + buildQuery(Map.of(
                 "query", name,
                 "page", page,
                 "limit", limit
-        ));
-        return request(resource, SearchResult.class);
+        ));        return request(resource, TR_SEARCH);
     }
 
     public Movie findMovieById(long id) throws IOException {
-        ///v1.4/movie/680529
         String resource = "movie/" + id;
         return request(resource, Movie.class);
+    }
+
+    public List<Season> findSeasonsById(long id) throws IOException {
+        return all(page -> findSeasonsById(id, page, PAGE_SIZE));
+    }
+
+    public Page<Season> findSeasonsById(long id, int page, int limit) throws IOException {
+        String resource = "season?" + buildQuery(Map.of(
+                "movieId", id,
+                "page", page,
+                "limit", limit
+        ));
+        return request(resource, TR_SEASONS);
     }
 
     String buildQuery(Map<String, ?> queryParameters) {
@@ -101,6 +135,18 @@ public class Api {
             String resource,
             Class<T> responseClazz
     ) throws IOException {
+        return request(resource, new TypeReference<>() {
+            @Override
+            public Type getType() {
+                return responseClazz;
+            }
+        });
+    }
+
+    public <T> T request(
+            String resource,
+            TypeReference<T> responseClazz
+    ) throws IOException {
         log.println(Logger.Level.DEBUG, ">>> GET " + resource);
         var request = HttpRequest.newBuilder()
                 .uri(URI.create(uri + resource))
@@ -120,7 +166,17 @@ public class Api {
         }
         if (response.statusCode() == 200) {
             try (Reader reader = reader(response)) {
-                return mapper.readValue(reader, responseClazz);
+                boolean json = response.headers()
+                        .firstValue("Content-Type")
+                        .filter(v -> v.startsWith("application/json"))
+                        .isPresent();
+                if(json) {
+                    return mapper.readValue(reader, responseClazz);
+                } else {
+                    StringWriter sw = new StringWriter();
+                    IOUtils.copy(reader, sw);
+                    throw new IOException("Server return:\n" + sw);
+                }
             }
         }
         throw new IOException(String.format(

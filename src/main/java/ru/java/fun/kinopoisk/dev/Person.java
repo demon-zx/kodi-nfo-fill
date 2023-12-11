@@ -1,5 +1,7 @@
 package ru.java.fun.kinopoisk.dev;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+
 public class Person implements Named {
     private final long id;
     private final String photo;
@@ -37,6 +39,7 @@ public class Person implements Named {
         return enProfession;
     }
 
+    @JsonCreator
     public Person(
             long id,
             String photo,

@@ -12,9 +12,9 @@ import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
-public final class NfoGenerator {
+public final class NfoMapper {
 
-    private NfoGenerator(){
+    private NfoMapper(){
 
     }
 

@@ -1,10 +1,7 @@
 package ru.java.fun.service;
 
 import ru.java.fun.ExecutionException;
-import ru.java.fun.kinopoisk.dev.Api;
-import ru.java.fun.kinopoisk.dev.Document;
-import ru.java.fun.kinopoisk.dev.Movie;
-import ru.java.fun.kinopoisk.dev.SearchResult;
+import ru.java.fun.kinopoisk.dev.*;
 import ru.java.fun.nfo.MovieNfo;
 import ru.java.fun.nfo.ThumbNfo;
 import ru.java.fun.util.FileUtil;
@@ -12,6 +9,7 @@ import ru.java.fun.util.FileUtil;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.Objects;
 
 
@@ -25,20 +23,24 @@ public class NfoService {
         this.api = api;
     }
 
-    public void fill(Path file, String name) throws IOException {
-        Path fileName = file.getName(file.getNameCount() - 1);
+    Path getFileName(Path file) {
+        return file.getName(file.getNameCount() - 1);
+    }
+
+    public void fillMovie(Path file, String name) throws IOException {
+        Path fileName = getFileName(file);
         String query = Objects.requireNonNullElseGet(
                 name,
                 fileName::toString
         );
-        SearchResult search = api.search(query, 1, 1);
+        Page<Document> search = api.search(query, 1, 1);
         Document first = search.getDocs()
                 .stream()
                 .findFirst()
-                .orElseThrow(() -> new ExecutionException("Not found first."));
+                .orElseThrow(() -> new ExecutionException("Not found."));
         log.printf(Logger.Level.INFO, "For %s found: %s, %s.%n", fileName, first.getName(), first.getYear());
         Movie movie = api.findMovieById(first.getId());
-        MovieNfo nfo = NfoGenerator.movie(movie);
+        MovieNfo nfo = NfoMapper.movie(movie);
         NfoFiles.save(file, nfo);
         for (ThumbNfo thumb : nfo.getThumbs()) {
             if (thumb.getPreview() != null) {
@@ -48,5 +50,22 @@ public class NfoService {
                 api.saveImage(path, uri);
             }
         }
+    }
+
+    public void fillSerial(Path file, String name) throws IOException {
+        Path fileName = getFileName(file);
+        String query = Objects.requireNonNullElseGet(
+                name,
+                fileName::toString
+        );
+        Page<Document> search = api.search(query, 1, 10);
+        Document first = search.getDocs()
+                .stream()
+                .filter(Document::isSerial)
+                .findFirst()
+                .orElseThrow(() -> new ExecutionException("Not found."));
+        Movie serial = api.findMovieById(first.getId());
+        List<Season> seasons = api.findSeasonsById(serial.getId());
+        System.out.println(seasons);
     }
 }

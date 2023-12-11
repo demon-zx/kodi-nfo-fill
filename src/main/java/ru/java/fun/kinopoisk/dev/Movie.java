@@ -1,5 +1,7 @@
 package ru.java.fun.kinopoisk.dev;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+
 import java.util.List;
 
 public class Movie extends Document {
@@ -11,6 +13,7 @@ public class Movie extends Document {
     private final List<Person> persons;
     private final List<ProductionCompany> productionCompanies;
 
+    @JsonCreator
     public Movie(
             int id,
             String name,
@@ -21,6 +24,7 @@ public class Movie extends Document {
             String description,
             String shortDescription,
             Integer movieLength,
+            boolean serial,
             int ageRating,
             int typeNumber,
             Image logo,
@@ -47,6 +51,7 @@ public class Movie extends Document {
                 description,
                 shortDescription,
                 movieLength,
+                serial,
                 ageRating,
                 typeNumber,
                 logo,
