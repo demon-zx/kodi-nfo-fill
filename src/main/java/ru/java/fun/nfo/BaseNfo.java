@@ -68,14 +68,14 @@ public abstract class BaseNfo {
     @XmlElement(name = "studio")
     private List<String> studio;
 
-    /*
-    <actor>
-  <name></name>
-  <role></role>
-  <order></order>
-  <thumb></thumb>
-</actor>
-     */
+    @XmlElement(name = "tag")
+    private List<String> tag;
+
+    @XmlElement(name = "trailer")
+    private String trailer;
+
+    @XmlElement(name = "actor")
+    private List<ActorNfo> actors;
 
     public UniqueIdNfo getUniqueId() {
         return uniqueId;
@@ -211,5 +211,29 @@ public abstract class BaseNfo {
 
     public void setStudio(List<String> studio) {
         this.studio = studio;
+    }
+
+    public List<String> getTag() {
+        return tag;
+    }
+
+    public void setTag(List<String> tag) {
+        this.tag = tag;
+    }
+
+    public String getTrailer() {
+        return trailer;
+    }
+
+    public void setTrailer(String trailer) {
+        this.trailer = trailer;
+    }
+
+    public List<ActorNfo> getActors() {
+        return actors;
+    }
+
+    public void setActors(List<ActorNfo> actors) {
+        this.actors = actors;
     }
 }

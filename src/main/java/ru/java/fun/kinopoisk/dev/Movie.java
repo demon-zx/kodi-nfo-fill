@@ -1,10 +1,13 @@
 package ru.java.fun.kinopoisk.dev;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonEnumDefaultValue;
+import com.fasterxml.jackson.annotation.JsonValue;
 
 import java.util.List;
 
 public class Movie extends Document {
+    private final Status status;
 
     private final Videos videos;
     private final ExternalId externalId;
@@ -34,6 +37,7 @@ public class Movie extends Document {
             Votes votes,
             List<ItemName> genres,
             List<ItemName> countries,
+            Status status,
             Videos videos,
             ExternalId externalId,
             Premiere premiere,
@@ -62,12 +66,17 @@ public class Movie extends Document {
                 genres,
                 countries
         );
+        this.status = status;
         this.videos = videos;
         this.externalId = externalId;
         this.premiere = premiere;
         this.slogan = slogan;
         this.persons = persons;
         this.productionCompanies = productionCompanies;
+    }
+
+    public Status getStatus() {
+        return status;
     }
 
     public Videos getVideos() {
@@ -92,5 +101,27 @@ public class Movie extends Document {
 
     public List<ProductionCompany> getProductionCompanies() {
         return productionCompanies;
+    }
+
+
+    public enum Status {
+        @JsonEnumDefaultValue
+        UNKNOWN("unknown"),
+        FILMING("filming"),
+        PRE_PRODUCTION("pre-production"),
+        COMPLETED("completed"),
+        ANNOUNCED("announced"),
+        POST_PRODUCTION("post-production");
+
+        private final String serialized;
+
+        Status(String serialized) {
+            this.serialized = serialized;
+        }
+
+        @JsonValue
+        public String serialized() {
+            return serialized;
+        }
     }
 }

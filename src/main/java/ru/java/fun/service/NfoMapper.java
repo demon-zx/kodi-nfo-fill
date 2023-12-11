@@ -18,39 +18,68 @@ public final class NfoMapper {
 
     }
 
-    public static MovieNfo movie(Movie document) {
-        MovieNfo movie = new MovieNfo();
-        movie.setTitle(document.getName());
-        movie.setOriginalTitle(Objects.requireNonNullElse(document.getAlternativeName(), document.getName()));
-        document.getCountries()
+    public static TVShowNfo tvShow(Movie movie, List<Season> seasons) {
+        TVShowNfo nfo = new TVShowNfo();
+        fill(movie, nfo);
+        nfo.setSeasonsCount(seasons.size());
+        int episodesCount = seasons.stream()
+                .mapToInt(Season::getEpisodesCount)
+                .sum();
+        nfo.setEpisodesCount(episodesCount);
+        nfo.setStatus(status(movie.getStatus()));
+        return nfo;
+    }
+
+    public static TVShowNfo.Status status(Movie.Status status) {
+        switch (status){
+            case FILMING:
+                return TVShowNfo.Status.Continuing;
+            case COMPLETED:
+                return TVShowNfo.Status.Ended;
+            case PRE_PRODUCTION:
+            case ANNOUNCED:
+            case POST_PRODUCTION:
+            default:
+                return null;
+        }
+    }
+
+    public static MovieNfo movie(Movie movie) {
+        MovieNfo nfo = new MovieNfo();
+        movie.getCountries()
                 .stream()
                 .findFirst()
-                .ifPresent(c -> movie.setCountry(c.getName()));
+                .ifPresent(c -> nfo.setCountry(c.getName()));
+        fill(movie, nfo);
+        return nfo;
+    }
+
+    private static void fill(Movie movie, BaseNfo nfo) {
+        nfo.setTitle(movie.getName());
+        nfo.setOriginalTitle(Objects.requireNonNullElse(movie.getAlternativeName(), movie.getName()));
         UniqueIdNfo uniqueId = new UniqueIdNfo();
         uniqueId.setType("kp");
         uniqueId.setDefaultValue(true);
-        uniqueId.setValue(String.valueOf(document.getId()));
-        movie.setUniqueId(uniqueId);
-        movie.setOutline(document.getShortDescription());
-        movie.setPlot(document.getDescription());
-        movie.setTagline(document.getSlogan());
-        movie.setPremiered(premiere(document));
-        movie.setRatings(ratings(document.getRating(), document.getVotes()));
-        movie.setTop250(document.getTop250());
-        movie.setThumbs(List.of(thumb(ThumbNfo.Aspect.poster, document.getPoster())));
+        uniqueId.setValue(String.valueOf(movie.getId()));
+        nfo.setUniqueId(uniqueId);
+        nfo.setOutline(movie.getShortDescription());
+        nfo.setPlot(movie.getDescription());
+        nfo.setTagline(movie.getSlogan());
+        nfo.setPremiered(premiere(movie));
+        nfo.setRatings(ratings(movie.getRating(), movie.getVotes()));
+        nfo.setTop250(movie.getTop250());
+        nfo.setThumbs(List.of(thumb(ThumbNfo.Aspect.poster, movie.getPoster())));
 //        movie.setFanArt();
-        movie.setGenre(named(document.getGenres()));
-        movie.setStudio(named(document.getProductionCompanies()));
-        var personsByProfession = Optional.ofNullable(document.getPersons())
+        nfo.setGenre(named(movie.getGenres()));
+        nfo.setStudio(named(movie.getProductionCompanies()));
+        var personsByProfession = Optional.ofNullable(movie.getPersons())
                 .stream()
                 .flatMap(Collection::stream)
                 .collect(Collectors.groupingBy(Person::getEnProfession));
-        movie.setDirector(named(personsByProfession.get("director")));
-        movie.setCredits(named(personsByProfession.get("writer")));
-        movie.setActors(actors(personsByProfession.get("actor")));
+        nfo.setDirector(named(personsByProfession.get("director")));
+        nfo.setCredits(named(personsByProfession.get("writer")));
+        nfo.setActors(actors(personsByProfession.get("actor")));
 //        movie.setTrailer();
-
-        return movie;
     }
 
     private static List<ActorNfo> actors(List<Person> actor) {

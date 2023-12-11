@@ -1,6 +1,8 @@
 package ru.java.fun.service;
 
+import ru.java.fun.nfo.BaseNfo;
 import ru.java.fun.nfo.MovieNfo;
+import ru.java.fun.nfo.TVShowNfo;
 import ru.java.fun.util.FileUtil;
 
 import javax.xml.bind.JAXBContext;
@@ -22,15 +24,32 @@ public class NfoFiles {
     private NfoFiles() {
     }
 
-    public static void save(Path original, MovieNfo movie) {
+    public static void save(Path directory, TVShowNfo nfo) {
+        Path file = directory.resolve("tvshow.nfo");
+        save(file, nfo, TVShowNfo.class);
+    }
+
+    public static void save(Path original, MovieNfo nfo) {
+        Path file = FileUtil.replaceExtension(original, ".nfo");
+        save(file, nfo, MovieNfo.class);
+    }
+
+    public static <T extends BaseNfo> void save(Path file, T nfo, Class<T> nfoClass) {
         try {
-            JAXBContext ctx = JAXBContext.newInstance(MovieNfo.class);
+            JAXBContext ctx = JAXBContext.newInstance(nfoClass);
             Marshaller marshaller = ctx.createMarshaller();
+            save(file, nfo, marshaller);
+        } catch (JAXBException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static <T extends BaseNfo> void save(Path file, T nfo, Marshaller marshaller) {
+        try {
             marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, true);
-            Path file = FileUtil.replaceExtension(original, ".nfo");
             Files.deleteIfExists(file);
             try (Writer w = Files.newBufferedWriter(file, UTF_8, WRITE, CREATE_NEW)) {
-                marshaller.marshal(movie, w);
+                marshaller.marshal(nfo, w);
                 w.flush();
             }
         } catch (IOException e) {
