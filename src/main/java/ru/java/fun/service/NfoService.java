@@ -49,7 +49,10 @@ public class NfoService {
         Movie movie = api.findMovieById(first.getId());
         MovieNfo nfo = NfoMapper.movie(movie);
         NfoFiles.save(file, nfo);
-        saveThumbs(nfo.getThumbs(), aspect ->  FileUtil.replaceExtension(file, "-" + aspect.name() + ".jpg"));
+        saveThumbs(
+                nfo.getThumbs(),
+                (aspect, number) -> FileUtil.replaceExtension(file, "-" + aspect.name() + number + ".jpg")
+        );
     }
 
     public void fillSerial(Path file, String name) throws IOException {
@@ -68,13 +71,9 @@ public class NfoService {
         List<Season> seasons = api.findSeasonsById(serial.getId());
         TVShowNfo nfo = NfoMapper.tvShow(serial, seasons);
         NfoFiles.save(file, nfo);
-        Map<ThumbNfo.Aspect, Integer> numbers = new HashMap<>();
         saveThumbs(
                 nfo.getThumbs(),
-                aspect -> {
-                    int number = numbers.compute(aspect, (s, c) -> requireNonNullElse(c, 0) + 1) - 1;
-                    return file.resolve(aspect.name() + (number == 0 ? "" : String.valueOf(number)) + ".jpg");
-                }
+                (aspect, number) -> file.resolve(aspect.name() + number + ".jpg")
         );
         for (ThumbNfo thumb : nfo.getThumbs()) {
             if (thumb.getPreview() != null) {
@@ -87,11 +86,14 @@ public class NfoService {
         System.out.println(seasons);
     }
 
-    private void saveThumbs(List<ThumbNfo> thumbs, Function<ThumbNfo.Aspect, Path> fileFunction) throws IOException {
+    private void saveThumbs(List<ThumbNfo> thumbs, BiFunction<ThumbNfo.Aspect, String, Path> fileFunction) throws IOException {
+        Map<ThumbNfo.Aspect, Integer> numbers = new HashMap<>();
         for (ThumbNfo thumb : thumbs) {
             if (thumb.getPreview() != null) {
                 URI uri = URI.create(thumb.getPreview());
-                Path path = fileFunction.apply(thumb.getAspect());
+                ThumbNfo.Aspect aspect = thumb.getAspect();
+                int number = numbers.compute(aspect, (s, c) -> requireNonNullElse(c, 0) + 1) - 1;
+                Path path = fileFunction.apply(aspect, number == 0 ? "" : String.valueOf(number));
                 api.saveImage(path, uri);
             }
         }
