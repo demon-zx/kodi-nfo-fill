@@ -1,6 +1,7 @@
 package ru.java.fun.service;
 
 import ru.java.fun.nfo.BaseNfo;
+import ru.java.fun.nfo.EpisodeNfo;
 import ru.java.fun.nfo.MovieNfo;
 import ru.java.fun.nfo.TVShowNfo;
 import ru.java.fun.util.FileUtil;
@@ -27,6 +28,11 @@ public class NfoFiles {
     public static void save(Path directory, TVShowNfo nfo) {
         Path file = directory.resolve("tvshow.nfo");
         save(file, nfo, TVShowNfo.class);
+    }
+
+    public static void save(Path episode, EpisodeNfo nfo) {
+        Path file = FileUtil.replaceExtension(episode, ".nfo");
+        save(file, nfo, EpisodeNfo.class);
     }
 
     public static void save(Path original, MovieNfo nfo) {

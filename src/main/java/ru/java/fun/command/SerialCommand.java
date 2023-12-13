@@ -5,6 +5,7 @@ import picocli.CommandLine.Option;
 import ru.java.fun.service.NfoService;
 
 import java.nio.file.Path;
+import java.util.Set;
 
 @CommandLine.Command(
         name = "serial",
@@ -26,6 +27,13 @@ public class SerialCommand extends AbstractCommand {
             required = true
     )
     private Path file;
+    @Option(
+            names = {"-e", "--extensions"},
+            description = "File extensions with movies split by comma (,)",
+            defaultValue = "avi,mkv,mov,wmv,flv,webm,mpg,mpeg,mp2,mp3,mp4",
+            split = ","
+    )
+    private Set<String> extensions;
 
     public String getName() {
         return name;
@@ -38,7 +46,7 @@ public class SerialCommand extends AbstractCommand {
     @Override
     public Integer call() throws Exception {
         NfoService service = new NfoService(log(), api());
-        service.fillSerial(getFile(), getName());
+        service.fillSerial(getFile(), extensions, getName());
         return 0;
     }
 

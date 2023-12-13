@@ -30,6 +30,19 @@ public final class NfoMapper {
         return nfo;
     }
 
+    public static EpisodeNfo episode(Episode episode) {
+        EpisodeNfo nfo = new EpisodeNfo();
+        //nfo.setUniqueId();
+        nfo.setTitle(Objects.requireNonNullElse(episode.getName(), episode.getEnName()));
+        nfo.setOriginalTitle(episode.getEnName());
+        nfo.setPlot(episode.getDescription());
+        LocalDate premiered = Optional.ofNullable(episode.getAirDate())
+                .map(OffsetDateTime::toLocalDate)
+                .orElse(null);
+        nfo.setPremiered(premiered);
+        return nfo;
+    }
+
     public static TVShowNfo.Status status(Movie.Status status) {
         switch (status){
             case FILMING:

@@ -2,6 +2,7 @@ package ru.java.fun.service;
 
 import ru.java.fun.ExecutionException;
 import ru.java.fun.kinopoisk.dev.*;
+import ru.java.fun.nfo.EpisodeNfo;
 import ru.java.fun.nfo.MovieNfo;
 import ru.java.fun.nfo.TVShowNfo;
 import ru.java.fun.nfo.ThumbNfo;
@@ -9,13 +10,12 @@ import ru.java.fun.util.FileUtil;
 
 import java.io.IOException;
 import java.net.URI;
+import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.function.BiFunction;
-import java.util.function.Function;
+import java.util.*;
+import java.util.function.*;
+import java.util.stream.Collector;
+import java.util.stream.Collectors;
 
 import static java.util.Objects.requireNonNullElse;
 
@@ -55,8 +55,8 @@ public class NfoService {
         );
     }
 
-    public void fillSerial(Path file, String name) throws IOException {
-        Path fileName = getFileName(file);
+    public void fillSerial(Path directory, Set<String> extensions, String name) throws IOException {
+        Path fileName = getFileName(directory);
         String query = Objects.requireNonNullElseGet(
                 name,
                 fileName::toString
@@ -67,24 +67,39 @@ public class NfoService {
                 .filter(Document::isSerial)
                 .findFirst()
                 .orElseThrow(() -> new ExecutionException("Not found."));
+        log.printf(Logger.Level.INFO, "For %s found: %s, %s.%n", fileName, first.getName(), first.getYear());
         Movie serial = api.findMovieById(first.getId());
         List<Season> seasons = api.findSeasonsById(serial.getId());
         TVShowNfo nfo = NfoMapper.tvShow(serial, seasons);
-        NfoFiles.save(file, nfo);
-        saveThumbs(
-                nfo.getThumbs(),
-                (aspect, number) -> file.resolve(aspect.name() + number + ".jpg")
-        );
-        for (ThumbNfo thumb : nfo.getThumbs()) {
-            if (thumb.getPreview() != null) {
-                URI uri = URI.create(thumb.getPreview());
-                ThumbNfo.Aspect aspect = thumb.getAspect();
-                Path path = FileUtil.replaceExtension(file, "-" + aspect.name() + ".jpg");
-                api.saveImage(path, uri);
+        Map<EpisodeId, Episode> episodes = new HashMap<>();
+        for (Season season : seasons) {
+            for (Episode episode : season.getEpisodes()) {
+                episodes.put(new EpisodeId(season.getNumber(), episode.getNumber()), episode);
             }
         }
-        System.out.println(seasons);
+        List<Path> episodeFiles = findEpisodes(directory, extensions);
+        NfoFiles.save(directory, nfo);
+        saveThumbs(
+                nfo.getThumbs(),
+                (aspect, number) -> directory.resolve(aspect.name() + number + ".jpg")
+        );
+        for (Path episodeFile : episodeFiles) {
+            EpisodeId episodeId = EpisodeIdDetector.detect(episodeFile);
+            Episode episode = episodes.get(episodeId);
+            if (episode != null) {
+                EpisodeNfo episodeNfo = NfoMapper.episode(episode);
+                NfoFiles.save(episodeFile, episodeNfo);
+            }
+        }
     }
+
+    private List<Path> findEpisodes(Path directory, Set<String> extensions) throws IOException {
+        //noinspection resource
+        return Files.walk(directory, 2)
+                .filter(p -> extensions.contains(FileUtil.extractExtension(p)))
+                .collect(Collectors.toList());
+    }
+
 
     private void saveThumbs(List<ThumbNfo> thumbs, BiFunction<ThumbNfo.Aspect, String, Path> fileFunction) throws IOException {
         Map<ThumbNfo.Aspect, Integer> numbers = new HashMap<>();
