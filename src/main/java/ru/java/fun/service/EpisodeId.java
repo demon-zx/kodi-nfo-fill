@@ -32,4 +32,5 @@ public class EpisodeId {
     public int hashCode() {
         return Objects.hash(season, episode);
     }
+
 }

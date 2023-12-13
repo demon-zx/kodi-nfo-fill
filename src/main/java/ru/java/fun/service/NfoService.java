@@ -86,9 +86,30 @@ public class NfoService {
         for (Path episodeFile : episodeFiles) {
             EpisodeId episodeId = EpisodeIdDetector.detect(episodeFile);
             Episode episode = episodes.get(episodeId);
-            if (episode != null) {
-                EpisodeNfo episodeNfo = NfoMapper.episode(episode);
-                NfoFiles.save(episodeFile, episodeNfo);
+            if (episodeId != null) {
+                if (episode != null) {
+                    log.printf(
+                            Logger.Level.INFO,
+                            "Episode S%02dE%02d found for %s%n",
+                            episodeId.getSeason(),
+                            episodeId.getEpisode(),
+                            episodeFile.getFileName()
+                    );
+                    EpisodeNfo episodeNfo = NfoMapper.episode(episode);
+                    NfoFiles.save(episodeFile, episodeNfo);
+                } else {
+                    log.printf(
+                            Logger.Level.INFO,
+                            "Episode S%02dE%02d NOT found for %s%n",
+                            episodeId.getSeason(),
+                            episodeId.getEpisode(),
+                            episodeFile.getFileName()
+                    );
+
+                }
+            } else {
+                log.printf(Logger.Level.INFO, "Episode NOT DETECT for %s%n", episodeFile.getFileName());
+
             }
         }
     }
