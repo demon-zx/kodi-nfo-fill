@@ -78,7 +78,11 @@ public final class NfoMapper {
         nfo.setOutline(movie.getShortDescription());
         nfo.setPlot(movie.getDescription());
         nfo.setTagline(movie.getSlogan());
-        nfo.setPremiered(premiere(movie));
+        LocalDate premiered = premiere(movie);
+        nfo.setPremiered(premiered);
+        if (premiered != null) {
+            nfo.setYear(premiered.getYear());
+        }
         nfo.setRatings(ratings(movie.getRating(), movie.getVotes()));
         nfo.setTop250(movie.getTop250());
         nfo.setThumbs(List.of(thumb(ThumbNfo.Aspect.poster, movie.getPoster())));

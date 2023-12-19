@@ -27,6 +27,11 @@ public abstract class BaseNfo {
     private String tagline;
 
     /**
+     * Deprecated, but used in TinyMediaManager
+     */
+    @XmlElement(name = "year")
+    private Integer year;
+    /**
      * Premier date: yyyy-MM-dd
      */
     @XmlElement(name = "premiered")
@@ -123,6 +128,14 @@ public abstract class BaseNfo {
 
     public void setTagline(String tagline) {
         this.tagline = tagline;
+    }
+
+    public Integer getYear() {
+        return year;
+    }
+
+    public void setYear(Integer year) {
+        this.year = year;
     }
 
     public LocalDate getPremiered() {
