@@ -32,8 +32,13 @@ public final class NfoMapper {
 
     public static EpisodeNfo episode(Episode episode) {
         EpisodeNfo nfo = new EpisodeNfo();
+        String defaultName = "Эпизод " + episode.getNumber();
         //nfo.setUniqueId();
-        nfo.setTitle(Objects.requireNonNullElse(episode.getName(), episode.getEnName()));
+        String name = Optional.ofNullable(episode.getName())
+                .filter(e -> !e.equalsIgnoreCase(defaultName))
+                .or(() -> Optional.ofNullable(episode.getEnName()))
+                .orElse(defaultName);
+        nfo.setTitle(name);
         nfo.setOriginalTitle(episode.getEnName());
         nfo.setPlot(episode.getDescription());
         LocalDate premiered = Optional.ofNullable(episode.getAirDate())
