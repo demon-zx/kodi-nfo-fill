@@ -14,7 +14,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.function.*;
-import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
 import static java.util.Objects.requireNonNullElse;
@@ -55,7 +54,12 @@ public class NfoService {
         );
     }
 
-    public void fillSerial(Path directory, Set<String> extensions, String name) throws IOException {
+    public void fillSerial(
+            Path directory,
+            Set<String> extensions,
+            String name,
+            boolean crossNumbering
+    ) throws IOException {
         Path fileName = getFileName(directory);
         String query = Objects.requireNonNullElseGet(
                 name,
@@ -69,12 +73,21 @@ public class NfoService {
                 .orElseThrow(() -> new ExecutionException("Not found."));
         log.printf(Logger.Level.INFO, "For %s found: %s, %s.%n", fileName, first.getName(), first.getYear());
         Movie serial = api.findMovieById(first.getId());
-        List<Season> seasons = api.findSeasonsById(serial.getId());
+        List<Season> seasons = api.findSeasonsById(serial.getId())
+                .stream()
+                .filter(s -> s.getNumber() > 0)
+                .sorted(Comparator.comparing(Season::getNumber))
+                .collect(Collectors.toList());
         TVShowNfo nfo = NfoMapper.tvShow(serial, seasons);
         Map<EpisodeId, Episode> episodes = new HashMap<>();
+        int episodeNumber = 1;
         for (Season season : seasons) {
             for (Episode episode : season.getEpisodes()) {
-                episodes.put(new EpisodeId(season.getNumber(), episode.getNumber()), episode);
+                if (crossNumbering) {
+                    episodes.put(new EpisodeId(1, episodeNumber++), episode);
+                } else {
+                    episodes.put(new EpisodeId(season.getNumber(), episode.getNumber()), episode);
+                }
             }
         }
         List<Path> episodeFiles = findEpisodes(directory, extensions);
@@ -83,11 +96,17 @@ public class NfoService {
                 nfo.getThumbs(),
                 (aspect, number) -> directory.resolve(aspect.name() + number + ".jpg")
         );
+        int foundCount = 0;
+        int notDetectCount = 0;
+        int notFoundCount = 0;
         for (Path episodeFile : episodeFiles) {
-            EpisodeId episodeId = EpisodeIdDetector.detect(episodeFile);
+            EpisodeId episodeId = EpisodeIdDetector.detect(episodeFile)
+                    .map(eid -> crossNumbering ? new EpisodeId(1, eid.getEpisode()) : eid)
+                    .orElse(null);
             Episode episode = episodes.get(episodeId);
             if (episodeId != null) {
                 if (episode != null) {
+                    foundCount++;
                     log.printf(
                             Logger.Level.INFO,
                             "Episode S%02dE%02d found for %s%n",
@@ -98,6 +117,7 @@ public class NfoService {
                     EpisodeNfo episodeNfo = NfoMapper.episode(episode);
                     NfoFiles.save(episodeFile, episodeNfo);
                 } else {
+                    notFoundCount++;
                     log.printf(
                             Logger.Level.INFO,
                             "Episode S%02dE%02d NOT found for %s%n",
@@ -108,10 +128,15 @@ public class NfoService {
 
                 }
             } else {
+                notDetectCount++;
                 log.printf(Logger.Level.INFO, "Episode NOT DETECT for %s%n", episodeFile.getFileName());
-
             }
         }
+        log.println(Logger.Level.INFO, "");
+        log.println(Logger.Level.INFO, "Summary:");
+        log.printf(Logger.Level.INFO, "Found:      %4d%n", foundCount);
+        log.printf(Logger.Level.INFO, "Not found:  %4d%n", notFoundCount);
+        log.printf(Logger.Level.INFO, "Not detect: %4d%n", notDetectCount);
     }
 
     private List<Path> findEpisodes(Path directory, Set<String> extensions) throws IOException {

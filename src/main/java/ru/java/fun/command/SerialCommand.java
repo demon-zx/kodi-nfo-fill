@@ -34,6 +34,12 @@ public class SerialCommand extends AbstractCommand {
             split = ","
     )
     private Set<String> extensions;
+    @Option(
+            names = {"-c", "--cross-numbering", "--cross-numbering-episodes" },
+            description = "Cross numbering episodes",
+            defaultValue = "false"
+    )
+    private boolean crossNumbering;
 
     public String getName() {
         return name;
@@ -46,7 +52,7 @@ public class SerialCommand extends AbstractCommand {
     @Override
     public Integer call() throws Exception {
         NfoService service = new NfoService(log(), api());
-        service.fillSerial(getFile(), extensions, getName());
+        service.fillSerial(getFile(), extensions, getName(), crossNumbering);
         return 0;
     }
 
