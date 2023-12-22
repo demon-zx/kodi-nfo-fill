@@ -23,24 +23,31 @@ import java.util.stream.Stream;
 )
 public class MoviesCommand extends AbstractCommand {
 
+    @SuppressWarnings("unused")
     @Option(
             names = {"-d", "--directory"},
             description = "Directory with movies",
             required = true
     )
     private Path directory;
+
+    @SuppressWarnings("unused")
     @Option(
             names = {"-e", "--extensions"},
             description = "File extensions with movies split by comma (,)",
-            defaultValue = "avi,mkv,mov,wmv,flv,webm,mpg,mpeg,mp2,mp3,mp4",
+            defaultValue = "avi,mkv,mov,wmv,flv,webm,mpg,mpeg,mp2,mp3,mp4,m4v",
             split = ","
     )
     private Set<String> extensions;
+
+    @SuppressWarnings("unused")
     @Option(
             names = {"-u", "--update"},
             description = "Update exists, else scan only new files"
     )
     private boolean update;
+
+    @SuppressWarnings("unused")
     @Option(
             names = {"-f", "--force"},
             description = "Force scan"

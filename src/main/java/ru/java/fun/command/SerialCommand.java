@@ -15,25 +15,31 @@ import java.util.Set;
 )
 public class SerialCommand extends AbstractCommand {
 
+    @SuppressWarnings("unused")
     @Option(
             names = {"-n", "--name"},
             description = "Serial name"
     )
     private String name;
 
+    @SuppressWarnings("unused")
     @Option(
             names = {"-d", "--directory"},
             description = "Directory with serial",
             required = true
     )
     private Path file;
+
+    @SuppressWarnings("unused")
     @Option(
             names = {"-e", "--extensions"},
             description = "File extensions with movies split by comma (,)",
-            defaultValue = "avi,mkv,mov,wmv,flv,webm,mpg,mpeg,mp2,mp3,mp4",
+            defaultValue = "avi,mkv,mov,wmv,flv,webm,mpg,mpeg,mp2,mp3,mp4,m4v",
             split = ","
     )
     private Set<String> extensions;
+
+    @SuppressWarnings("unused")
     @Option(
             names = {"-c", "--cross-numbering", "--cross-numbering-episodes" },
             description = "Cross numbering episodes",

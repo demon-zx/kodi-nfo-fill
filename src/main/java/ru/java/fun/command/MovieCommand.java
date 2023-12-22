@@ -14,12 +14,14 @@ import java.nio.file.Path;
 )
 public class MovieCommand extends AbstractCommand {
 
+    @SuppressWarnings("unused")
     @Option(
             names = {"-n", "--name"},
             description = "Movie name"
     )
     private String name;
 
+    @SuppressWarnings("unused")
     @Option(
             names = {"-f", "--file"},
             description = "File name",
