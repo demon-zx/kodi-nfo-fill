@@ -49,6 +49,9 @@ public final class NfoMapper {
     }
 
     public static TVShowNfo.Status status(Movie.Status status) {
+        if (status == null) {
+            return TVShowNfo.Status.Continuing;
+        }
         switch (status){
             case FILMING:
                 return TVShowNfo.Status.Continuing;

@@ -1,6 +1,7 @@
 package ru.java.fun.kinopoisk.dev;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
 import java.time.OffsetDateTime;
 import java.util.List;
@@ -13,6 +14,7 @@ public class Season {
     private final int episodesCount;
     private final List<Episode> episodes;
     private final OffsetDateTime updatedAt;
+    @JsonDeserialize(using = AirDateTimeDeserializer.class)
     private final OffsetDateTime airDate;
     private final String description;
     private final int duration;
