@@ -1,5 +1,6 @@
 package ru.java.fun.service;
 
+import org.apache.commons.lang3.StringUtils;
 import ru.java.fun.ExecutionException;
 import ru.java.fun.kinopoisk.dev.*;
 import ru.java.fun.nfo.EpisodeNfo;
@@ -10,6 +11,7 @@ import ru.java.fun.util.FileUtil;
 
 import java.io.IOException;
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
@@ -60,6 +62,7 @@ public class NfoService {
             String name,
             boolean crossNumbering
     ) throws IOException {
+        Set<Integer> lockedSeasons = readSeasonLocks(directory);
         Path fileName = getFileName(directory);
         String query = Objects.requireNonNullElseGet(
                 name,
@@ -99,37 +102,25 @@ public class NfoService {
         int foundCount = 0;
         int notDetectCount = 0;
         int notFoundCount = 0;
+        int locked = 0;
         for (Path episodeFile : episodeFiles) {
             EpisodeId episodeId = EpisodeIdDetector.detect(episodeFile)
                     .map(eid -> crossNumbering ? new EpisodeId(1, eid.getEpisode()) : eid)
                     .orElse(null);
             Episode episode = episodes.get(episodeId);
             if (episodeId != null) {
-                if (episode != null) {
-                    foundCount++;
-                    log.printf(
-                            Logger.Level.INFO,
-                            "Episode S%02dE%02d found for %s%n",
-                            episodeId.getSeason(),
-                            episodeId.getEpisode(),
-                            episodeFile.getFileName()
-                    );
-                    EpisodeNfo episodeNfo = NfoMapper.episode(episode);
-                    NfoFiles.save(episodeFile, episodeNfo);
+                int seasonId = episodeId.getSeason();
+                if(lockedSeasons.contains(seasonId)){
+                    locked += locked(episodeId);
                 } else {
-                    notFoundCount++;
-                    log.printf(
-                            Logger.Level.INFO,
-                            "Episode S%02dE%02d NOT found for %s%n",
-                            episodeId.getSeason(),
-                            episodeId.getEpisode(),
-                            episodeFile.getFileName()
-                    );
-
+                    if (episode != null) {
+                        foundCount += found(episodeId, episodeFile, episode);
+                    } else {
+                        notFoundCount += notFound(episodeId, episodeFile);
+                    }
                 }
             } else {
-                notDetectCount++;
-                log.printf(Logger.Level.INFO, "Episode NOT DETECT for %s%n", episodeFile.getFileName());
+                notDetectCount += notDetect(episodeFile);
             }
         }
         log.println(Logger.Level.INFO, "");
@@ -137,6 +128,63 @@ public class NfoService {
         log.printf(Logger.Level.INFO, "Found:      %4d%n", foundCount);
         log.printf(Logger.Level.INFO, "Not found:  %4d%n", notFoundCount);
         log.printf(Logger.Level.INFO, "Not detect: %4d%n", notDetectCount);
+        log.printf(Logger.Level.INFO, "Locked: %4d%n", locked);
+    }
+
+    private int found(EpisodeId episodeId, Path episodeFile, Episode episode) {
+        log.printf(
+                Logger.Level.INFO,
+                "Episode S%02dE%02d found for %s%n",
+                episodeId.getSeason(),
+                episodeId.getEpisode(),
+                episodeFile.getFileName()
+        );
+        EpisodeNfo episodeNfo = NfoMapper.episode(episode);
+        NfoFiles.save(episodeFile, episodeNfo);
+        return 1;
+    }
+
+    private int locked(EpisodeId episodeId) {
+        log.printf(
+                Logger.Level.INFO,
+                "Episode S%02dE%02d locked for write%n",
+                episodeId.getSeason(),
+                episodeId.getEpisode()
+        );
+        return 1;
+    }
+
+    private int notFound(EpisodeId episodeId, Path episodeFile) {
+        log.printf(
+                Logger.Level.INFO,
+                "Episode S%02dE%02d NOT found for %s%n",
+                episodeId.getEpisode(),
+                episodeId.getEpisode(),
+                episodeFile.getFileName()
+        );
+        return 1;
+    }
+
+    private int notDetect(Path episodeFile) {
+        log.printf(Logger.Level.INFO, "Episode NOT DETECT for %s%n", episodeFile.getFileName());
+        return 1;
+    }
+
+
+    private Set<Integer> readSeasonLocks(Path directory) throws IOException {
+        Path lockFile = directory.resolve("lock.txt");
+        if (Files.exists(lockFile)) {
+            return Files.readAllLines(lockFile, StandardCharsets.UTF_8)
+                    .stream()
+                    .map(StringUtils::trimToNull)
+                    .filter(Objects::nonNull)
+                    .filter(l -> !StringUtils.startsWith(l, "#"))
+                    .map(SeasonIdDetector::detect)
+                    .filter(Optional::isPresent)
+                    .map(Optional::get)
+                    .collect(Collectors.toSet());
+        }
+        return Set.of();
     }
 
     private List<Path> findEpisodes(Path directory, Set<String> extensions) throws IOException {
