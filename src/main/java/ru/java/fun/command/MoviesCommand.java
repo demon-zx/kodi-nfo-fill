@@ -21,7 +21,7 @@ import java.util.stream.Stream;
         mixinStandardHelpOptions = true,
         description = "Scrap movies info in directory"
 )
-public class MoviesCommand extends AbstractCommand {
+public class MoviesCommand extends AbstractMediaCommand {
 
     @SuppressWarnings("unused")
     @Option(
@@ -30,15 +30,6 @@ public class MoviesCommand extends AbstractCommand {
             required = true
     )
     private Path directory;
-
-    @SuppressWarnings("unused")
-    @Option(
-            names = {"-e", "--extensions"},
-            description = "File extensions with movies split by comma (,)",
-            defaultValue = "avi,mkv,mov,wmv,flv,webm,mpg,mpeg,mp2,mp3,mp4,m4v",
-            split = ","
-    )
-    private Set<String> extensions;
 
     @SuppressWarnings("unused")
     @Option(

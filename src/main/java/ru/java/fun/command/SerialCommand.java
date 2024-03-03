@@ -13,7 +13,7 @@ import java.util.Set;
         mixinStandardHelpOptions = true,
         description = "Scrap tv show info"
 )
-public class SerialCommand extends AbstractCommand {
+public class SerialCommand extends AbstractMediaCommand {
 
     @SuppressWarnings("unused")
     @Option(
@@ -29,15 +29,6 @@ public class SerialCommand extends AbstractCommand {
             required = true
     )
     private Path file;
-
-    @SuppressWarnings("unused")
-    @Option(
-            names = {"-e", "--extensions"},
-            description = "File extensions with movies split by comma (,)",
-            defaultValue = "avi,mkv,mov,wmv,flv,webm,mpg,mpeg,mp2,mp3,mp4,m4v",
-            split = ","
-    )
-    private Set<String> extensions;
 
     @SuppressWarnings("unused")
     @Option(
