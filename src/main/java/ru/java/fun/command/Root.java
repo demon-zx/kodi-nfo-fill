@@ -10,7 +10,8 @@ import picocli.CommandLine;
         subcommands = {
                 MovieCommand.class,
                 MoviesCommand.class,
-                SerialCommand.class
+                SerialCommand.class,
+                FakeSerialCommand.class,
         }
 )
 public class Root {

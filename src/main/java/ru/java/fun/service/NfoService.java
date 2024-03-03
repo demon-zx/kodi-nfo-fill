@@ -15,7 +15,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
-import java.util.function.*;
+import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
 import static java.util.Objects.requireNonNullElse;
@@ -110,7 +110,7 @@ public class NfoService {
             Episode episode = episodes.get(episodeId);
             if (episodeId != null) {
                 int seasonId = episodeId.getSeason();
-                if(lockedSeasons.contains(seasonId)){
+                if (lockedSeasons.contains(seasonId)) {
                     locked += locked(episodeId);
                 } else {
                     if (episode != null) {
@@ -195,7 +195,10 @@ public class NfoService {
     }
 
 
-    private void saveThumbs(List<ThumbNfo> thumbs, BiFunction<ThumbNfo.Aspect, String, Path> fileFunction) throws IOException {
+    private void saveThumbs(
+            List<ThumbNfo> thumbs,
+            BiFunction<ThumbNfo.Aspect, String, Path> fileFunction
+    ) throws IOException {
         Map<ThumbNfo.Aspect, Integer> numbers = new HashMap<>();
         for (ThumbNfo thumb : thumbs) {
             if (thumb.getPreview() != null) {
@@ -206,5 +209,77 @@ public class NfoService {
                 api.saveImage(path, uri);
             }
         }
+    }
+
+    public void fakeSerial(Path directory, Set<String> extensions, String name, String episodePrefix) throws IOException {
+        Path fileName = getFileName(directory);
+        name = Objects.requireNonNullElseGet(
+                name,
+                fileName::toString
+        );
+        Movie serial = new Movie(
+                0,
+                name,
+                name,
+                name,
+                null,
+                0,
+                "",
+                "",
+                null,
+                true,
+                0,
+                0,
+                null,
+                null,
+                null,
+                null,
+                null,
+                List.of(),
+                List.of(),
+                Movie.Status.COMPLETED,
+                null,
+                null,
+                null,
+                "",
+                List.of(),
+                List.of()
+        );
+        List<Path> episodeFiles = findEpisodes(directory, extensions);
+        List<Episode> episodes = new ArrayList<>();
+        int foundCount = 0;
+        int notDetectCount = 0;
+        int episodeNumber = 1;
+        for (Path episodeFile : episodeFiles) {
+            Episode episode = new Episode(
+                    episodeNumber,
+                    episodePrefix + " " + episodeNumber,
+                    null,
+                    null,
+                    0,
+                    null,
+                    null,
+                    null
+            );
+            episodes.add(episode);
+            EpisodeId episodeId = EpisodeIdDetector.detect(episodeFile)
+                    .orElse(null);
+            episodeNumber++;
+            if (episodeId!=null) {
+                foundCount += found(episodeId, episodeFile, episode);
+            } else {
+                notDetectCount++;
+            }
+        }
+        Season season = new Season("1", 0, 1, episodeFiles.size(), episodes, null, null, "", 0, "","","", null,"");
+        TVShowNfo nfo = NfoMapper.tvShow(serial, List.of(season));
+        NfoFiles.save(directory, nfo);
+
+        log.println(Logger.Level.INFO, "");
+        log.println(Logger.Level.INFO, "Summary:");
+        log.printf(Logger.Level.INFO, "Found:      %4d%n", foundCount);
+//        log.printf(Logger.Level.INFO, "Not found:  %4d%n", notFoundCount);
+        log.printf(Logger.Level.INFO, "Not detect: %4d%n", notDetectCount);
+//        log.printf(Logger.Level.INFO, "Locked: %4d%n", locked);
     }
 }

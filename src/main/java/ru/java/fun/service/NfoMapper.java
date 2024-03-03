@@ -11,6 +11,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public final class NfoMapper {
 
@@ -93,7 +94,9 @@ public final class NfoMapper {
         }
         nfo.setRatings(ratings(movie.getRating(), movie.getVotes()));
         nfo.setTop250(movie.getTop250());
-        nfo.setThumbs(List.of(thumb(ThumbNfo.Aspect.poster, movie.getPoster())));
+        if (movie.getPoster() != null) {
+            nfo.setThumbs(List.of(thumb(ThumbNfo.Aspect.poster, movie.getPoster())));
+        }
 //        movie.setFanArt();
         nfo.setGenre(named(movie.getGenres()));
         nfo.setStudio(named(movie.getProductionCompanies()));
@@ -138,16 +141,35 @@ public final class NfoMapper {
     }
 
     public static List<RatingNfo> ratings(ru.java.fun.kinopoisk.dev.Rating source, Votes votes) {
-        RatingNfo kp = new RatingNfo();
-        kp.setMax(10);
-        kp.setName("kinopoisk");
-        kp.setDefaultValue(true);
-        kp.setValue(source.getKp());
-        kp.setVotes(Objects.requireNonNullElse(votes.getKp(), 0));
-        RatingNfo imdb = new RatingNfo();
-        imdb.setName("imdb");
-        imdb.setValue(source.getImdb());
-        imdb.setVotes(Objects.requireNonNullElse(votes.getImdb(), 0));
-        return List.of(kp, imdb);
+        return Stream.of(
+                        Optional.ofNullable(source)
+                                .map(s -> {
+                                    Integer v = Optional.ofNullable(votes)
+                                            .map(Votes::getKp)
+                                            .orElse(0);
+                                    RatingNfo r = new RatingNfo();
+                                    r.setMax(10);
+                                    r.setName("kinopoisk");
+                                    r.setDefaultValue(true);
+                                    r.setValue(s.getKp());
+                                    r.setVotes(v);
+                                    return r;
+                                }),
+                        Optional.ofNullable(source)
+                                .map(s -> {
+                                    Integer v = Optional.ofNullable(votes)
+                                            .map(Votes::getImdb)
+                                            .orElse(0);
+                                    RatingNfo r = new RatingNfo();
+                                    r.setMax(10);
+                                    r.setName("imdb");
+                                    r.setValue(s.getImdb());
+                                    r.setVotes(v);
+                                    return r;
+                                })
+                )
+                .filter(Optional::isPresent)
+                .map(Optional::get)
+                .collect(Collectors.toList());
     }
 }
