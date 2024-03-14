@@ -1,7 +1,9 @@
 package ru.java.fun.command;
 
 import picocli.CommandLine;
-import ru.java.fun.kinopoisk.dev.Api;
+import ru.java.fun.kinopoisk.dev.ApiClient;
+import ru.java.fun.service.DataService;
+import ru.java.fun.service.KPDDataService;
 import ru.java.fun.service.Logger;
 import ru.java.fun.service.PrintStreamLogger;
 import ru.java.fun.util.Lazy;
@@ -36,7 +38,7 @@ public abstract class AbstractCommand implements Callable<Integer> {
         return new PrintStreamLogger(commandLine.getOut(), level);
     });
 
-    private final Lazy<Api> api = new Lazy<>(() -> new Api(
+    private final Lazy<ApiClient> api = new Lazy<>(() -> new ApiClient(
             root.getUri(),
             root.getToken(),
             log.get(),
@@ -49,7 +51,7 @@ public abstract class AbstractCommand implements Callable<Integer> {
         return log.get();
     }
 
-    protected Api api() {
-        return api.get();
+    protected DataService api() {
+        return new KPDDataService(log(), api.get());
     }
 }

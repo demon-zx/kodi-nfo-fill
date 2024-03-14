@@ -1,25 +1,20 @@
-package ru.java.fun.kinopoisk.dev;
-
-
-import com.fasterxml.jackson.annotation.JsonCreator;
+package ru.java.fun.service.model;
 
 import java.util.List;
 
 public class Page<T> {
-
     private final int total;
     private final int limit;
     private final int page;
     private final int pages;
-    private final List<T> docs;
+    private final List<T> data;
 
-    @JsonCreator
-    public Page(int total, int limit, int page, int pages, List<T> docs) {
+    public Page(int total, int limit, int page, int pages, List<T> data) {
         this.total = total;
         this.limit = limit;
         this.page = page;
         this.pages = pages;
-        this.docs = docs;
+        this.data = data;
     }
 
     public int getTotal() {
@@ -38,7 +33,7 @@ public class Page<T> {
         return pages;
     }
 
-    public List<T> getDocs() {
-        return docs;
+    public List<T> getData() {
+        return data;
     }
 }

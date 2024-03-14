@@ -1,7 +1,8 @@
 package ru.java.fun.service;
 
-import ru.java.fun.kinopoisk.dev.*;
+import ru.java.fun.kinopoisk.dev.Api;
 import ru.java.fun.nfo.*;
+import ru.java.fun.service.model.*;
 
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
@@ -15,8 +16,7 @@ import java.util.stream.Stream;
 
 public final class NfoMapper {
 
-    private NfoMapper(){
-
+    private NfoMapper() {
     }
 
     public static TVShowNfo tvShow(Movie movie, List<Season> seasons) {
@@ -24,7 +24,8 @@ public final class NfoMapper {
         fill(movie, nfo);
         nfo.setSeasonsCount(seasons.size());
         int episodesCount = seasons.stream()
-                .mapToInt(Season::getEpisodesCount)
+                .map(Season::getEpisodes)
+                .mapToInt(List::size)
                 .sum();
         nfo.setEpisodesCount(episodesCount);
         nfo.setStatus(status(movie.getStatus()));
@@ -35,34 +36,31 @@ public final class NfoMapper {
         EpisodeNfo nfo = new EpisodeNfo();
         String defaultName = "Эпизод " + episode.getNumber();
         //nfo.setUniqueId();
-        String name = Optional.ofNullable(episode.getName())
+        String name = Optional.ofNullable(episode.getTitle())
                 .filter(e -> !e.equalsIgnoreCase(defaultName))
-                .or(() -> Optional.ofNullable(episode.getEnName()))
+                .or(() -> Optional.ofNullable(episode.getOriginalTitle()))
                 .orElse(defaultName);
         nfo.setTitle(name);
-        nfo.setOriginalTitle(episode.getEnName());
+        nfo.setOriginalTitle(episode.getOriginalTitle());
         nfo.setPlot(episode.getDescription());
-        LocalDate premiered = Optional.ofNullable(episode.getAirDate())
+        LocalDate premiered = Optional.ofNullable(episode.getPremiere())
                 .map(OffsetDateTime::toLocalDate)
                 .orElse(null);
         nfo.setPremiered(premiered);
         return nfo;
     }
 
-    public static TVShowNfo.Status status(Movie.Status status) {
+    public static TVShowNfo.Status status(Status status) {
         if (status == null) {
             return TVShowNfo.Status.Continuing;
         }
-        switch (status){
-            case FILMING:
+        switch (status) {
+            case CONTINUING:
                 return TVShowNfo.Status.Continuing;
-            case COMPLETED:
+            case ENDED:
                 return TVShowNfo.Status.Ended;
-            case PRE_PRODUCTION:
-            case ANNOUNCED:
-            case POST_PRODUCTION:
             default:
-                return null;
+                throw new IllegalArgumentException("Unknown value: " + status);
         }
     }
 
@@ -71,43 +69,47 @@ public final class NfoMapper {
         movie.getCountries()
                 .stream()
                 .findFirst()
-                .ifPresent(c -> nfo.setCountry(c.getName()));
+                .ifPresent(nfo::setCountry);
         fill(movie, nfo);
         return nfo;
     }
 
     private static void fill(Movie movie, BaseNfo nfo) {
         nfo.setTitle(movie.getName());
-        nfo.setOriginalTitle(Objects.requireNonNullElse(movie.getAlternativeName(), movie.getName()));
+        nfo.setOriginalTitle(Objects.requireNonNullElse(movie.getOriginalName(), movie.getName()));
         UniqueIdNfo uniqueId = new UniqueIdNfo();
         uniqueId.setType("kp");
         uniqueId.setDefaultValue(true);
         uniqueId.setValue(String.valueOf(movie.getId()));
         nfo.setUniqueId(uniqueId);
-        nfo.setOutline(movie.getShortDescription());
-        nfo.setPlot(movie.getDescription());
-        nfo.setTagline(movie.getSlogan());
-        LocalDate premiered = premiere(movie);
-        nfo.setPremiered(premiered);
-        if (premiered != null) {
-            nfo.setYear(premiered.getYear());
-        }
-        nfo.setRatings(ratings(movie.getRating(), movie.getVotes()));
+        nfo.setOutline(movie.getOutline());
+        nfo.setPlot(movie.getPlot());
+        nfo.setTagline(movie.getTagline());
+        Optional.ofNullable(movie.getPremiere())
+                .map(OffsetDateTime::toLocalDate)
+                .ifPresent(p -> {
+                    nfo.setPremiered(p);
+                    nfo.setYear(p.getYear());
+                });
+        var ratings = Optional.ofNullable(movie.getRatings())
+                .stream()
+                .flatMap(Collection::stream)
+                .map(NfoMapper::rating)
+                .collect(Collectors.toList());
+        nfo.setRatings(ratings);
         nfo.setTop250(movie.getTop250());
         if (movie.getPoster() != null) {
             nfo.setThumbs(List.of(thumb(ThumbNfo.Aspect.poster, movie.getPoster())));
         }
-//        movie.setFanArt();
-        nfo.setGenre(named(movie.getGenres()));
-        nfo.setStudio(named(movie.getProductionCompanies()));
-        var personsByProfession = Optional.ofNullable(movie.getPersons())
+        nfo.setGenre(movie.getGenres());
+        nfo.setStudio(movie.getProductions());
+        var personsByProfession = Optional.ofNullable(movie.getStaff())
                 .stream()
                 .flatMap(Collection::stream)
-                .collect(Collectors.groupingBy(Person::getEnProfession));
-        nfo.setDirector(named(personsByProfession.get("director")));
-        nfo.setCredits(named(personsByProfession.get("writer")));
-        nfo.setActors(actors(personsByProfession.get("actor")));
-//        movie.setTrailer();
+                .collect(Collectors.groupingBy(Person::getProfession));
+        nfo.setDirector(names(personsByProfession.get(Profession.DIRECTOR)));
+        nfo.setCredits(names(personsByProfession.get(Profession.WRITER)));
+        nfo.setActors(actors(personsByProfession.get(Profession.ACTOR)));
     }
 
     private static List<ActorNfo> actors(List<Person> actor) {
@@ -119,57 +121,30 @@ public final class NfoMapper {
                 .collect(Collectors.toList());
     }
 
-    private static LocalDate premiere(Movie document) {
-        return Optional.ofNullable(document.getPremiere())
-                .map(Premiere::getWorld)
-                .map(OffsetDateTime::toLocalDate)
-                .orElse(null);
-    }
-
-    private static List<String> named(List<? extends Named> entries) {
-        return Objects.requireNonNullElse(entries, List.<Named>of())
+    private static List<String> names(List<Person> entries) {
+        return Optional.ofNullable(entries)
                 .stream()
-                .map(Named::getName)
+                .flatMap(Collection::stream)
+                .map(Person::getName)
                 .collect(Collectors.toList());
     }
 
-    public static ThumbNfo thumb(ThumbNfo.Aspect aspect, Image image) {
+    public static ThumbNfo thumb(ThumbNfo.Aspect aspect, String url) {
         ThumbNfo t = new ThumbNfo();
         t.setAspect(aspect);
-        t.setPreview(image.getUrl());
+        t.setPreview(url);
         return t;
     }
 
-    public static List<RatingNfo> ratings(ru.java.fun.kinopoisk.dev.Rating source, Votes votes) {
-        return Stream.of(
-                        Optional.ofNullable(source)
-                                .map(s -> {
-                                    Integer v = Optional.ofNullable(votes)
-                                            .map(Votes::getKp)
-                                            .orElse(0);
-                                    RatingNfo r = new RatingNfo();
-                                    r.setMax(10);
-                                    r.setName("kinopoisk");
-                                    r.setDefaultValue(true);
-                                    r.setValue(s.getKp());
-                                    r.setVotes(v);
-                                    return r;
-                                }),
-                        Optional.ofNullable(source)
-                                .map(s -> {
-                                    Integer v = Optional.ofNullable(votes)
-                                            .map(Votes::getImdb)
-                                            .orElse(0);
-                                    RatingNfo r = new RatingNfo();
-                                    r.setMax(10);
-                                    r.setName("imdb");
-                                    r.setValue(s.getImdb());
-                                    r.setVotes(v);
-                                    return r;
-                                })
-                )
-                .filter(Optional::isPresent)
-                .map(Optional::get)
-                .collect(Collectors.toList());
+    public static RatingNfo rating(Rating rating) {
+        var r = new RatingNfo();
+        r.setName(rating.getName());
+        r.setMax(rating.getMax());
+        r.setDefaultValue(rating.isDefaultValue());
+        r.setValue(rating.getValue());
+        r.setVotes(rating.getVotes());
+        return r;
     }
+
+
 }

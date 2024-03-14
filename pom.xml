@@ -15,6 +15,7 @@
         <main.class>ru.java.fun.Main</main.class>
 
 
+        <mapstruct.version>1.5.5.Final</mapstruct.version>
         <jaxb.version>2.3.3</jaxb.version>
         <jackson.version>2.13.4</jackson.version>
         <jupiter.version>5.8.2</jupiter.version>
@@ -77,6 +78,12 @@
             <artifactId>commons-lang3</artifactId>
             <version>3.12.0</version>
         </dependency>
+        <dependency>
+            <groupId>org.mapstruct</groupId>
+            <artifactId>mapstruct</artifactId>
+            <version>${mapstruct.version}</version>
+        </dependency>
+
 
         <dependency>
             <groupId>org.junit.jupiter</groupId>
@@ -101,6 +108,11 @@
                 <version>3.11.0</version>
                 <configuration>
                     <annotationProcessorPaths>
+                        <path>
+                            <groupId>org.mapstruct</groupId>
+                            <artifactId>mapstruct-processor</artifactId>
+                            <version>${mapstruct.version}</version>
+                        </path>
                         <path>
                             <groupId>info.picocli</groupId>
                             <artifactId>picocli-codegen</artifactId>

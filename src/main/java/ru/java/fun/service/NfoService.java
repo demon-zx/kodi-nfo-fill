@@ -2,11 +2,11 @@ package ru.java.fun.service;
 
 import org.apache.commons.lang3.StringUtils;
 import ru.java.fun.ExecutionException;
-import ru.java.fun.kinopoisk.dev.*;
 import ru.java.fun.nfo.EpisodeNfo;
 import ru.java.fun.nfo.MovieNfo;
 import ru.java.fun.nfo.TVShowNfo;
 import ru.java.fun.nfo.ThumbNfo;
+import ru.java.fun.service.model.*;
 import ru.java.fun.util.FileUtil;
 
 import java.io.IOException;
@@ -14,6 +14,7 @@ import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.OffsetDateTime;
 import java.util.*;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
@@ -24,11 +25,11 @@ import static java.util.Objects.requireNonNullElse;
 public class NfoService {
 
     private final Logger log;
-    private final Api api;
+    private final DataService dataService;
 
-    public NfoService(Logger log, Api api) {
+    public NfoService(Logger log, DataService dataService) {
         this.log = log;
-        this.api = api;
+        this.dataService = dataService;
     }
 
     Path getFileName(Path file) {
@@ -41,13 +42,13 @@ public class NfoService {
                 name,
                 fileName::toString
         );
-        Page<Document> search = api.search(query, 1, 1);
-        Document first = search.getDocs()
+        var search = dataService.findByQuery(query, 1, 1);
+        var first = search.getData()
                 .stream()
                 .findFirst()
                 .orElseThrow(() -> new ExecutionException("Not found."));
         log.printf(Logger.Level.INFO, "For %s found: %s, %s.%n", fileName, first.getName(), first.getYear());
-        Movie movie = api.findMovieById(first.getId());
+        var movie = dataService.findMovieById(first.getId());
         MovieNfo nfo = NfoMapper.movie(movie);
         NfoFiles.save(file, nfo);
         saveThumbs(
@@ -68,15 +69,15 @@ public class NfoService {
                 name,
                 fileName::toString
         );
-        Page<Document> search = api.search(query, 1, 10);
-        Document first = search.getDocs()
+        var search = dataService.findByQuery(query, 1, 10);
+        var first = search.getData()
                 .stream()
-                .filter(Document::isSerial)
+                .filter(MovieBase::isSerial)
                 .findFirst()
                 .orElseThrow(() -> new ExecutionException("Not found."));
         log.printf(Logger.Level.INFO, "For %s found: %s, %s.%n", fileName, first.getName(), first.getYear());
-        Movie serial = api.findMovieById(first.getId());
-        List<Season> seasons = api.findSeasonsById(serial.getId())
+        var serial = dataService.findMovieById(first.getId());
+        var seasons = dataService.findSeasonsById(String.valueOf(serial.getId()))
                 .stream()
                 .filter(s -> s.getNumber() > 0)
                 .sorted(Comparator.comparing(Season::getNumber))
@@ -84,8 +85,8 @@ public class NfoService {
         TVShowNfo nfo = NfoMapper.tvShow(serial, seasons);
         Map<EpisodeId, Episode> episodes = new HashMap<>();
         int episodeNumber = 1;
-        for (Season season : seasons) {
-            for (Episode episode : season.getEpisodes()) {
+        for (var season : seasons) {
+            for (var episode : season.getEpisodes()) {
                 if (crossNumbering) {
                     episodes.put(new EpisodeId(1, episodeNumber++), episode);
                 } else {
@@ -107,7 +108,7 @@ public class NfoService {
             EpisodeId episodeId = EpisodeIdDetector.detect(episodeFile)
                     .map(eid -> crossNumbering ? new EpisodeId(1, eid.getEpisode()) : eid)
                     .orElse(null);
-            Episode episode = episodes.get(episodeId);
+            ru.java.fun.service.model.Episode episode = episodes.get(episodeId);
             if (episodeId != null) {
                 int seasonId = episodeId.getSeason();
                 if (lockedSeasons.contains(seasonId)) {
@@ -131,7 +132,7 @@ public class NfoService {
         log.printf(Logger.Level.INFO, "Locked: %4d%n", locked);
     }
 
-    private int found(EpisodeId episodeId, Path episodeFile, Episode episode) {
+    private int found(EpisodeId episodeId, Path episodeFile, ru.java.fun.service.model.Episode episode) {
         log.printf(
                 Logger.Level.INFO,
                 "Episode S%02dE%02d found for %s%n",
@@ -206,44 +207,40 @@ public class NfoService {
                 ThumbNfo.Aspect aspect = thumb.getAspect();
                 int number = numbers.compute(aspect, (s, c) -> requireNonNullElse(c, 0) + 1) - 1;
                 Path path = fileFunction.apply(aspect, number == 0 ? "" : String.valueOf(number));
-                api.saveImage(path, uri);
+                dataService.saveImage(path, uri);
             }
         }
     }
 
-    public void fakeSerial(Path directory, Set<String> extensions, String name, String episodePrefix) throws IOException {
+    public void fakeSerial(
+            Path directory,
+            Set<String> extensions,
+            String name,
+            String episodePrefix
+    ) throws IOException {
         Path fileName = getFileName(directory);
         name = Objects.requireNonNullElseGet(
                 name,
                 fileName::toString
         );
-        Movie serial = new Movie(
+        var serial = new Movie(
+                "",
+                name,
                 0,
                 name,
-                name,
-                name,
-                null,
-                0,
+                Status.ENDED,
                 "",
                 "",
                 null,
-                true,
-                0,
-                0,
                 null,
                 null,
                 null,
                 null,
                 null,
-                List.of(),
-                List.of(),
-                Movie.Status.COMPLETED,
                 null,
                 null,
                 null,
-                "",
-                List.of(),
-                List.of()
+                true
         );
         List<Path> episodeFiles = findEpisodes(directory, extensions);
         List<Episode> episodes = new ArrayList<>();
@@ -256,25 +253,21 @@ public class NfoService {
                     episodePrefix + " " + episodeNumber,
                     null,
                     null,
-                    0,
-                    null,
-                    null,
-                    null
+                    OffsetDateTime.MIN
             );
             episodes.add(episode);
             EpisodeId episodeId = EpisodeIdDetector.detect(episodeFile)
                     .orElse(null);
             episodeNumber++;
-            if (episodeId!=null) {
+            if (episodeId != null) {
                 foundCount += found(episodeId, episodeFile, episode);
             } else {
                 notDetectCount++;
             }
         }
-        Season season = new Season("1", 0, 1, episodeFiles.size(), episodes, null, null, "", 0, "","","", null,"");
+        Season season = new Season(1, episodes);
         TVShowNfo nfo = NfoMapper.tvShow(serial, List.of(season));
         NfoFiles.save(directory, nfo);
-
         log.println(Logger.Level.INFO, "");
         log.println(Logger.Level.INFO, "Summary:");
         log.printf(Logger.Level.INFO, "Found:      %4d%n", foundCount);

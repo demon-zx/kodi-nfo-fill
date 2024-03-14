@@ -1,5 +1,7 @@
 package ru.java.fun.service;
 
+import ru.java.fun.service.model.EpisodeId;
+
 import java.nio.file.Path;
 import java.util.Optional;
 import java.util.regex.Matcher;

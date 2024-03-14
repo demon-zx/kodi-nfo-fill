@@ -2,17 +2,16 @@ package ru.java.fun.service;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import ru.java.fun.service.model.EpisodeId;
 
 import java.nio.file.Path;
 import java.util.Optional;
-
-import static org.junit.jupiter.api.Assertions.*;
 
 @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
 class EpisodeIdDetectorTest {
 
     public static final Optional<EpisodeId> S2E3 = Optional.of(new EpisodeId(2, 3));
-    public static final Optional<EpisodeId> S1E3 = Optional.of(new EpisodeId(1, 3));
+    public static final Optional<EpisodeId> S5E1 = Optional.of(new EpisodeId(1, 3));
 
     @Test
     void notDetect() {

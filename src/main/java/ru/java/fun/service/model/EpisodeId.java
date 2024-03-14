@@ -1,4 +1,4 @@
-package ru.java.fun.service;
+package ru.java.fun.service.model;
 
 import java.util.Objects;
 
@@ -33,4 +33,9 @@ public class EpisodeId {
         return Objects.hash(season, episode);
     }
 
+    @Override
+    public String toString() {
+        return "S" + season +
+                "E" + episode;
+    }
 }
