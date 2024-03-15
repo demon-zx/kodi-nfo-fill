@@ -30,14 +30,6 @@ public class SerialCommand extends AbstractMediaCommand {
     )
     private Path file;
 
-    @SuppressWarnings("unused")
-    @Option(
-            names = {"-c", "--cross-numbering", "--cross-numbering-episodes" },
-            description = "Cross numbering episodes",
-            defaultValue = "false"
-    )
-    private boolean crossNumbering;
-
     public String getName() {
         return name;
     }
@@ -49,7 +41,7 @@ public class SerialCommand extends AbstractMediaCommand {
     @Override
     public Integer call() throws Exception {
         NfoService service = new NfoService(log(), api());
-        service.fillSerial(getFile(), extensions, getName(), crossNumbering);
+        service.fillSerial(getFile(), extensions, getName());
         return 0;
     }
 

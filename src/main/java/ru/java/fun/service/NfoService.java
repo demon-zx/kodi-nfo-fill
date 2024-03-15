@@ -32,6 +32,28 @@ public class NfoService {
         this.dataService = dataService;
     }
 
+    private static Movie fakeSerial(String name) {
+        return new Movie(
+                "",
+                name,
+                0,
+                name,
+                Status.ENDED,
+                "",
+                "",
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                true
+        );
+    }
+
     Path getFileName(Path file) {
         return file.getName(file.getNameCount() - 1);
     }
@@ -60,8 +82,7 @@ public class NfoService {
     public void fillSerial(
             Path directory,
             Set<String> extensions,
-            String name,
-            boolean crossNumbering
+            String name
     ) throws IOException {
         Set<Integer> lockedSeasons = readSeasonLocks(directory);
         Path fileName = getFileName(directory);
@@ -82,16 +103,49 @@ public class NfoService {
                 .filter(s -> s.getNumber() > 0)
                 .sorted(Comparator.comparing(Season::getNumber))
                 .collect(Collectors.toList());
+        fillSerial(directory, extensions, serial, seasons, lockedSeasons);
+    }
+
+    public void tsvSerial(
+            Path directory,
+            Set<String> extensions,
+            String name,
+            Path tsvFile
+    ) throws IOException {
+        Path fileName = getFileName(directory);
+        String query = Objects.requireNonNullElseGet(
+                name,
+                fileName::toString
+        );
+        var search = dataService.findByQuery(query, 1, 10);
+        var first = search.getData()
+                .stream()
+                .filter(MovieBase::isSerial)
+                .findFirst()
+                .orElse(null);
+        Movie serial;
+        if (first != null) {
+            log.printf(Logger.Level.INFO, "For %s found: %s, %s.%n", fileName, first.getName(), first.getYear());
+            serial = dataService.findMovieById(first.getId());
+        } else {
+            serial = fakeSerial(name);
+        }
+        var seasons = TSVLoader.load(tsvFile);
+        fillSerial(directory, extensions, serial, seasons, Set.of());
+    }
+
+    private void fillSerial(
+            Path directory,
+            Set<String> extensions,
+            Movie serial,
+            List<Season> seasons,
+            Set<Integer> lockedSeasons
+    ) throws IOException {
         TVShowNfo nfo = NfoMapper.tvShow(serial, seasons);
         Map<EpisodeId, Episode> episodes = new HashMap<>();
-        int episodeNumber = 1;
         for (var season : seasons) {
             for (var episode : season.getEpisodes()) {
-                if (crossNumbering) {
-                    episodes.put(new EpisodeId(1, episodeNumber++), episode);
-                } else {
-                    episodes.put(new EpisodeId(season.getNumber(), episode.getNumber()), episode);
-                }
+                episodes.put(new EpisodeId(season.getNumber(), episode.getNumber()), episode);
             }
         }
         List<Path> episodeFiles = findEpisodes(directory, extensions);
@@ -106,7 +160,6 @@ public class NfoService {
         int locked = 0;
         for (Path episodeFile : episodeFiles) {
             EpisodeId episodeId = EpisodeIdDetector.detect(episodeFile)
-                    .map(eid -> crossNumbering ? new EpisodeId(1, eid.getEpisode()) : eid)
                     .orElse(null);
             ru.java.fun.service.model.Episode episode = episodes.get(episodeId);
             if (episodeId != null) {
@@ -171,7 +224,6 @@ public class NfoService {
         return 1;
     }
 
-
     private Set<Integer> readSeasonLocks(Path directory) throws IOException {
         Path lockFile = directory.resolve("lock.txt");
         if (Files.exists(lockFile)) {
@@ -194,7 +246,6 @@ public class NfoService {
                 .filter(p -> extensions.contains(FileUtil.extractExtension(p)))
                 .collect(Collectors.toList());
     }
-
 
     private void saveThumbs(
             List<ThumbNfo> thumbs,
@@ -223,25 +274,7 @@ public class NfoService {
                 name,
                 fileName::toString
         );
-        var serial = new Movie(
-                "",
-                name,
-                0,
-                name,
-                Status.ENDED,
-                "",
-                "",
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                true
-        );
+        var serial = fakeSerial(name);
         List<Path> episodeFiles = findEpisodes(directory, extensions);
         List<Episode> episodes = new ArrayList<>();
         int foundCount = 0;
@@ -271,8 +304,6 @@ public class NfoService {
         log.println(Logger.Level.INFO, "");
         log.println(Logger.Level.INFO, "Summary:");
         log.printf(Logger.Level.INFO, "Found:      %4d%n", foundCount);
-//        log.printf(Logger.Level.INFO, "Not found:  %4d%n", notFoundCount);
         log.printf(Logger.Level.INFO, "Not detect: %4d%n", notDetectCount);
-//        log.printf(Logger.Level.INFO, "Locked: %4d%n", locked);
     }
 }

@@ -12,6 +12,7 @@ import picocli.CommandLine;
                 MoviesCommand.class,
                 SerialCommand.class,
                 FakeSerialCommand.class,
+                TsvSerialCommand.class,
         }
 )
 public class Root {
