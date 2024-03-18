@@ -23,7 +23,7 @@ public class TsvSerialCommand extends AbstractMediaCommand {
     @SuppressWarnings("unused")
     @Option(
             names = {"-ei", "--episodes-info"},
-            description = "Episode list in csv (tsv, tab separated) format",
+            description = "Episode list in csv format (tsv, tab separated): episodeId, episode name, premier date (dd.MM.yy), description",
             required = true
     )
     private Path episodesInfoFile;
