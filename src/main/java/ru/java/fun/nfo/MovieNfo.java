@@ -13,6 +13,9 @@ import java.util.List;
 @XmlAccessorType(XmlAccessType.FIELD)
 public class MovieNfo extends BaseNfo {
 
+    @XmlElement(name = "lockdata")
+    private boolean lockdata = true;
+
     @XmlElement(name = "country")
     private String country;
 
@@ -26,6 +29,14 @@ film collections
    <overview></overview>
 </set>
  */
+
+    public boolean isLockdata() {
+        return lockdata;
+    }
+
+    public void setLockdata(boolean lockdata) {
+        this.lockdata = lockdata;
+    }
 
     public String getCountry() {
         return country;
