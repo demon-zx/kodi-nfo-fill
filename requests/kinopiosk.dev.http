@@ -1,0 +1,10 @@
+GET https://api.kinopoisk.dev/v1.4/movie/search?query=Futurama
+X-API-KEY: {{token}}
+
+###
+GET https://api.kinopoisk.dev/v1.4/movie/79920
+X-API-KEY: {{token}}
+
+###
+GET https://api.kinopoisk.dev/v1.4/season?movieId=79920
+X-API-KEY: {{token}}

@@ -82,7 +82,8 @@ public class NfoService {
     public void fillSerial(
             Path directory,
             Set<String> extensions,
-            String name
+            String name,
+            boolean withSpecial
     ) throws IOException {
         Set<Integer> lockedSeasons = readSeasonLocks(directory);
         Path fileName = getFileName(directory);
@@ -100,7 +101,7 @@ public class NfoService {
         var serial = dataService.findMovieById(first.getId());
         var seasons = dataService.findSeasonsById(String.valueOf(serial.getId()))
                 .stream()
-                .filter(s -> s.getNumber() > 0)
+                .filter(s -> withSpecial || s.getNumber() > 0)
                 .sorted(Comparator.comparing(Season::getNumber))
                 .collect(Collectors.toList());
         fillSerial(directory, extensions, serial, seasons, lockedSeasons);
