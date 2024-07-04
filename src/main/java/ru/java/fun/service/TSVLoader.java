@@ -22,7 +22,9 @@ public class TSVLoader {
 
     private static final DateTimeFormatter[] TSV_FORMATTERS = {
             DateTimeFormatter.ofPattern("dd.MM.yy"),
-            DateTimeFormatter.ofPattern("dd.MM.yyyy")
+            DateTimeFormatter.ofPattern("dd.MM.yyyy"),
+            DateTimeFormatter.ofPattern("dd MMM yyyy"),
+            DateTimeFormatter.ofPattern("dd MMMM yyyy"),
     };
 
     private static OffsetDateTime parseCsvData(String value, int format) {
@@ -31,7 +33,7 @@ public class TSVLoader {
                     .atStartOfDay(ZoneId.systemDefault())
                     .toOffsetDateTime();
         } catch (DateTimeParseException dtfe) {
-            if (format++ < TSV_FORMATTERS.length) {
+            if (format++ < TSV_FORMATTERS.length - 1) {
                 return parseCsvData(value, format);
             }
         }

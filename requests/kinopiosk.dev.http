@@ -1,4 +1,4 @@
-GET https://api.kinopoisk.dev/v1.4/movie/search?query=Futurama
+GET https://api.kinopoisk.dev/v1.4/movie/search?query=Американский папаша
 X-API-KEY: {{token}}
 
 ###
@@ -6,5 +6,5 @@ GET https://api.kinopoisk.dev/v1.4/movie/79920
 X-API-KEY: {{token}}
 
 ###
-GET https://api.kinopoisk.dev/v1.4/season?movieId=79920
+GET https://api.kinopoisk.dev/v1.4/season?movieId=258054&limit=100
 X-API-KEY: {{token}}
