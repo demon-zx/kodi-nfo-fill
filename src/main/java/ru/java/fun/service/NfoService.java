@@ -131,7 +131,7 @@ public class NfoService {
         } else {
             serial = fakeSerial(name);
         }
-        var seasons = TSVLoader.load(tsvFile);
+        var seasons = TSVLoader.load(Files.newBufferedReader(tsvFile, StandardCharsets.UTF_8));
         fillSerial(directory, extensions, serial, seasons, Set.of());
     }
 
