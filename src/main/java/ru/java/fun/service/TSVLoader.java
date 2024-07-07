@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.*;
@@ -27,24 +28,21 @@ public class TSVLoader {
             DateTimeFormatter.ofPattern("dd MMMM yyyy"),
     };
 
-    private static OffsetDateTime parseCsvData(String value, DateTimeFormatter format) {
-        try {
-            return LocalDate.parse(value, format)
-                    .atStartOfDay(ZoneId.systemDefault())
-                    .toOffsetDateTime();
-        } catch (DateTimeParseException dtfe) {
-            return parseCsvData(value, 0);
-        }
+    private static OffsetDateTime parseDateTime(String value, DateTimeFormatter format) {
+        return Optional.ofNullable(value)
+                .filter(v -> format != null)
+                .map(v -> LocalDate.parse(v, format))
+                .map(v -> v.atStartOfDay(ZoneId.systemDefault()))
+                .map(ZonedDateTime::toOffsetDateTime)
+                .orElse(null);
     }
 
-    private static OffsetDateTime parseCsvData(String value, int format) {
+    private static OffsetDateTime parseDateTime(String value, int format) {
         try {
-            return LocalDate.parse(value, TSV_FORMATTERS[format])
-                    .atStartOfDay(ZoneId.systemDefault())
-                    .toOffsetDateTime();
+            return parseDateTime(value, TSV_FORMATTERS[format]);
         } catch (DateTimeParseException dtfe) {
             if (format++ < TSV_FORMATTERS.length - 1) {
-                return parseCsvData(value, format);
+                return parseDateTime(value, format);
             }
         }
         return null;
@@ -79,7 +77,7 @@ public class TSVLoader {
     }
 
     private static String cutPremiere(String value) {
-        if(StringUtils.startsWithIgnoreCase(value, PREMIERE)) {
+        if (StringUtils.startsWithIgnoreCase(value, PREMIERE)) {
             return PREMIERE;
         }
         return value;
@@ -115,13 +113,16 @@ public class TSVLoader {
             String[] columns = line.split("\t");
             return EpisodeIdDetector.detect(columns[indexId])
                     .map(id -> {
-                        String title = columns[indexName];
-                        String nameOriginal = null;
-                        if (indexNameOriginal != null) {
-                            nameOriginal = columns[indexNameOriginal];
+                        String title = get(columns, indexName);
+                        String nameOriginal = get(columns, indexNameOriginal);
+                        String premiere = get(columns, indexPremiere);
+                        String description = get(columns, indexDescription);
+                        OffsetDateTime premiereDateTime;
+                        try {
+                            premiereDateTime = parseDateTime(premiere, premiereFormat);
+                        } catch (DateTimeParseException e) {
+                            premiereDateTime = parseDateTime(premiere, 0);
                         }
-                        String premiere = columns[indexPremiere];
-                        String description = columns[indexDescription];
                         return Pair.of(
                                 id.getSeason(),
                                 new Episode(
@@ -129,12 +130,19 @@ public class TSVLoader {
                                         title,
                                         nameOriginal,
                                         description,
-                                        parseCsvData(premiere, premiereFormat)
+                                        premiereDateTime
                                 )
                         );
                     });
         }
         return Optional.empty();
+    }
+
+    private static String get(String[] columns, Integer index) {
+        return Optional.ofNullable(index)
+                .filter(i -> i < columns.length)
+                .map(i -> columns[i])
+                .orElse(null);
     }
 
 }
