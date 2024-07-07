@@ -1,24 +1,30 @@
 package ru.java.fun.command;
 
+import org.apache.commons.text.StringEscapeUtils;
 import picocli.CommandLine;
 import picocli.CommandLine.Option;
 import ru.java.fun.service.NfoService;
-import ru.java.fun.service.model.Movie;
-import ru.java.fun.service.model.MovieBase;
+import ru.java.fun.service.TSVSaver;
+import ru.java.fun.service.model.Episode;
 import ru.java.fun.service.model.Season;
 
+import java.io.BufferedWriter;
+import java.io.PrintWriter;
+import java.io.Writer;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 @CommandLine.Command(
-        name = "serial",
-        aliases = "sr",
+        name = "serial-tsv",
+        aliases = "sr-tsv",
         mixinStandardHelpOptions = true,
-        description = "Scrap tv show info"
+        description = "Scrap tv show info to tsv"
 )
-public class SerialCommand extends AbstractMediaCommand {
+public class SerialToTsvCommand extends AbstractMediaCommand {
 
     @SuppressWarnings("unused")
     @Option(
@@ -35,12 +41,12 @@ public class SerialCommand extends AbstractMediaCommand {
     )
     private Path file;
 
-    @SuppressWarnings("unused")
+    @SuppressWarnings({"unused", "FieldMayBeFinal"})
     @Option(
-            names = {"-s", "--special", "--with-special"},
-            description = "Include special"
+            names = {"-ei", "--episodes-info"},
+            description = "Episode list in csv format (tsv, tab separated)"
     )
-    private boolean withSpecial;
+    private Path episodesInfoFile = Path.of("./episodes.tsv");
 
     public String getName() {
         return name;
@@ -50,20 +56,14 @@ public class SerialCommand extends AbstractMediaCommand {
         return file;
     }
 
-    public boolean isWithSpecial() {
-        return withSpecial;
-    }
-
     @Override
     public Integer call() throws Exception {
         NfoService service = new NfoService(log(), api());
         var serial = service.findSerial(getFile(), getName());
-        var seasons = api().findSeasonsById(serial.getId())
-                .stream()
-                .filter(s -> withSpecial || s.getNumber() > 0)
-                .collect(Collectors.toList());
-        Set<Integer> lockedSeasons = service.readSeasonLocks(getFile());
-        service.fillSerial(getFile(), extensions, serial, seasons, lockedSeasons);
+        var seasons = api().findSeasonsById(serial.getId());
+        try(PrintWriter writer = new PrintWriter(Files.newBufferedWriter(episodesInfoFile, StandardCharsets.UTF_8))) {
+            TSVSaver.save(writer, seasons);
+        }
         return 0;
     }
 

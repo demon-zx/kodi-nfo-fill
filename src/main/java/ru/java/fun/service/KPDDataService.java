@@ -12,6 +12,7 @@ import ru.java.fun.service.model.Season;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Path;
+import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -30,6 +31,7 @@ public class KPDDataService implements DataService {
         return api.findSeasonsById(id)
                 .stream()
                 .map(s -> SeasonMapper.mapper.from(s))
+                .sorted(Comparator.comparing(Season::getNumber))
                 .collect(Collectors.toList());
     }
 

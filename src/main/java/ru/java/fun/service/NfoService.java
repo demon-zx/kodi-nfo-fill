@@ -32,7 +32,7 @@ public class NfoService {
         this.dataService = dataService;
     }
 
-    private static Movie fakeSerial(String name) {
+    public Movie fakeSerial(String name) {
         return new Movie(
                 "",
                 name,
@@ -79,39 +79,9 @@ public class NfoService {
         );
     }
 
-    public void fillSerial(
+    public Movie findSerial(
             Path directory,
-            Set<String> extensions,
-            String name,
-            boolean withSpecial
-    ) throws IOException {
-        Set<Integer> lockedSeasons = readSeasonLocks(directory);
-        Path fileName = getFileName(directory);
-        String query = Objects.requireNonNullElseGet(
-                name,
-                fileName::toString
-        );
-        var search = dataService.findByQuery(query, 1, 10);
-        var first = search.getData()
-                .stream()
-                .filter(MovieBase::isSerial)
-                .findFirst()
-                .orElseThrow(() -> new ExecutionException("Not found."));
-        log.printf(Logger.Level.INFO, "For %s found: %s, %s.%n", fileName, first.getName(), first.getYear());
-        var serial = dataService.findMovieById(first.getId());
-        var seasons = dataService.findSeasonsById(String.valueOf(serial.getId()))
-                .stream()
-                .filter(s -> withSpecial || s.getNumber() > 0)
-                .sorted(Comparator.comparing(Season::getNumber))
-                .collect(Collectors.toList());
-        fillSerial(directory, extensions, serial, seasons, lockedSeasons);
-    }
-
-    public void tsvSerial(
-            Path directory,
-            Set<String> extensions,
-            String name,
-            Path tsvFile
+            String name
     ) throws IOException {
         Path fileName = getFileName(directory);
         String query = Objects.requireNonNullElseGet(
@@ -119,23 +89,19 @@ public class NfoService {
                 fileName::toString
         );
         var search = dataService.findByQuery(query, 1, 10);
-        var first = search.getData()
+        var serial = search.getData()
                 .stream()
                 .filter(MovieBase::isSerial)
                 .findFirst()
                 .orElse(null);
-        Movie serial;
-        if (first != null) {
-            log.printf(Logger.Level.INFO, "For %s found: %s, %s.%n", fileName, first.getName(), first.getYear());
-            serial = dataService.findMovieById(first.getId());
-        } else {
-            serial = fakeSerial(name);
+        if (serial != null) {
+            log.printf(Logger.Level.INFO, "For %s found: %s, %s.%n", fileName, serial.getName(), serial.getYear());
+            return dataService.findMovieById(serial.getId());
         }
-        var seasons = TSVLoader.load(Files.newBufferedReader(tsvFile, StandardCharsets.UTF_8));
-        fillSerial(directory, extensions, serial, seasons, Set.of());
+        return null;
     }
 
-    private void fillSerial(
+    public void fillSerial(
             Path directory,
             Set<String> extensions,
             Movie serial,
@@ -225,7 +191,7 @@ public class NfoService {
         return 1;
     }
 
-    private Set<Integer> readSeasonLocks(Path directory) throws IOException {
+    public Set<Integer> readSeasonLocks(Path directory) throws IOException {
         Path lockFile = directory.resolve("lock.txt");
         if (Files.exists(lockFile)) {
             return Files.readAllLines(lockFile, StandardCharsets.UTF_8)
