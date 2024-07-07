@@ -46,7 +46,7 @@ public class SerialToTsvCommand extends AbstractMediaCommand {
             names = {"-ei", "--episodes-info"},
             description = "Episode list in csv format (tsv, tab separated)"
     )
-    private Path episodesInfoFile = Path.of("./episodes.tsv");
+    private Path episodesInfoFile = Path.of("./episodes.csv");
 
     public String getName() {
         return name;

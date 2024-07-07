@@ -37,7 +37,7 @@ public class TsvToSerialCommand extends AbstractMediaCommand {
                     "'Premier date (date format)', " +
                     "'Description'"
     )
-    private Path episodesInfoFile = Path.of("./episodes.tsv");
+    private Path episodesInfoFile = Path.of("./episodes.csv");
     @SuppressWarnings("unused")
     @Option(
             names = {"-d", "--directory"},
