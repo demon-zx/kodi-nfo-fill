@@ -1,5 +1,8 @@
 package ru.java.fun.util;
 
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.Pair;
+
 import java.nio.file.Path;
 import java.util.Optional;
 
@@ -13,17 +16,20 @@ public final class FileUtil {
         Path parent = file.getParent();
         String name = file.getFileName()
                 .toString();
-        int index = name.lastIndexOf('.');
-        String nameWithoutExt;
-        if (index > 0) {
-            nameWithoutExt = name.substring(0, index);
-        } else {
-            nameWithoutExt = name;
-        }
+        String nameWithoutExt = extractName(name);
         String newName = nameWithoutExt + newExtension;
         return Optional.ofNullable(parent)
                 .map(p -> p.resolve(newName))
                 .orElseGet(() -> Path.of(newName));
+    }
+
+    private static String extractName(String fileName) {
+        Pair<String, String> split = split(fileName);
+        String ext = split.getRight();
+        if ("part".equals(ext)) {
+            return extractName(split.getLeft());
+        }
+        return split.getLeft();
     }
 
     public static String extractExtension(Path file) {
@@ -34,6 +40,15 @@ public final class FileUtil {
             return name.substring(index + 1);
         }
         return "";
+    }
+
+    public static Pair<String, String> split(String name) {
+        int index = name.lastIndexOf(".");
+        if (index > 0) {
+            return Pair.of(name.substring(0, index), name.substring(index + 1));
+        } else {
+            return Pair.of(name, null);
+        }
     }
 
 }

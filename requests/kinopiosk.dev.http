@@ -1,4 +1,4 @@
-GET https://api.kinopoisk.dev/v1.4/movie/search?query=Винни пух
+GET https://api.kinopoisk.dev/v1.4/movie/search?query=капитан врунгель
 X-API-KEY: {{token}}
 
 ###
@@ -6,7 +6,7 @@ GET https://api.kinopoisk.dev/v1.4/movie/79920
 X-API-KEY: {{token}}
 
 ###
-GET https://api.kinopoisk.dev/v1.4/season?movieId=45779&limit=100
+GET https://api.kinopoisk.dev/v1.4/season?movieId=43254&limit=100
 X-API-KEY: {{token}}
 
 ### Южный парк
