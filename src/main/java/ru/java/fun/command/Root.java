@@ -9,7 +9,6 @@ import picocli.CommandLine;
         description = "Scrap media info and generate nfo files for kodi",
         subcommands = {
                 MovieCommand.class,
-                MoviesCommand.class,
                 SerialCommand.class,
                 FakeSerialCommand.class,
                 TsvToSerialCommand.class,

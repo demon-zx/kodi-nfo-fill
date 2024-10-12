@@ -1,6 +1,5 @@
 package ru.java.fun.util;
 
-import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 
 import java.nio.file.Path;
@@ -26,7 +25,7 @@ public final class FileUtil {
     private static String extractName(String fileName) {
         Pair<String, String> split = split(fileName);
         String ext = split.getRight();
-        if ("part".equals(ext)) {
+        if ("part".equalsIgnoreCase(ext)) {
             return extractName(split.getLeft());
         }
         return split.getLeft();
@@ -35,11 +34,16 @@ public final class FileUtil {
     public static String extractExtension(Path file) {
         String name = file.getFileName()
                 .toString();
-        int index = name.lastIndexOf('.');
-        if (index > 0) {
-            return name.substring(index + 1);
+        return extractExtension(name);
+    }
+
+    private static String extractExtension(String name) {
+        Pair<String, String> split = split(name);
+        String ext = split.getRight();
+        if ("part".equalsIgnoreCase(ext)) {
+            return extractExtension(split.getLeft());
         }
-        return "";
+        return ext;
     }
 
     public static Pair<String, String> split(String name) {
