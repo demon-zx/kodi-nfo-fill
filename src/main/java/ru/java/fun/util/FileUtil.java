@@ -3,6 +3,7 @@ package ru.java.fun.util;
 import org.apache.commons.lang3.tuple.Pair;
 
 import java.nio.file.Path;
+import java.util.Objects;
 import java.util.Optional;
 
 public final class FileUtil {
@@ -39,7 +40,7 @@ public final class FileUtil {
 
     private static String extractExtension(String name) {
         Pair<String, String> split = split(name);
-        String ext = split.getRight();
+        String ext = Objects.requireNonNullElse(split.getRight(), "");
         if ("part".equalsIgnoreCase(ext)) {
             return extractExtension(split.getLeft());
         }
