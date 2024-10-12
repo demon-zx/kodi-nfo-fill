@@ -3,6 +3,7 @@ package ru.java.fun.command;
 import picocli.CommandLine;
 import picocli.CommandLine.Option;
 import ru.java.fun.nfo.MovieNfo;
+import ru.java.fun.service.Logger;
 import ru.java.fun.service.NfoFiles;
 import ru.java.fun.service.NfoService;
 import ru.java.fun.util.FileUtil;
@@ -64,14 +65,14 @@ public class MovieCommand extends AbstractMediaCommand {
     public Integer call() throws Exception {
         NfoService service = new NfoService(log(), api());
         if (Files.isDirectory(file)) {
-            movies(service, file, update, force);
+            movies(service, log(), file, update, force);
         } else {
-            movie(service, file, update, force);
+            movie(service, log(), name, file, update, force);
         }
         return 0;
     }
 
-    public void movies(NfoService service, Path directory, boolean update, boolean force) throws Exception {
+    public void movies(NfoService service, Logger log, Path directory, boolean update, boolean force) throws Exception {
         List<Path> files;
         try (Stream<Path> stream = Files.walk(directory)) {
             files = stream
@@ -80,15 +81,16 @@ public class MovieCommand extends AbstractMediaCommand {
                     .collect(Collectors.toList());
         }
         for (Path file : files) {
-            movie(service, file, update, force);
+            movie(service, log, null, file, update, force);
         }
     }
 
-    public void movie(NfoService service, Path file, boolean update, boolean force) throws IOException {
+    public void movie(NfoService service, Logger log, String name, Path file, boolean update, boolean force) throws IOException {
         Path nfoFile = FileUtil.replaceExtension(file, ".nfo");
         boolean exists = Files.exists(nfoFile);
         if (exists) {
             if (!force) {
+                log.printf(Logger.Level.INFO, "Use exists file %s%n", nfoFile);
                 MovieNfo nfo = NfoFiles.load(nfoFile);
                 name = Stream.of(
                                 nfo.getOriginalTitle(),

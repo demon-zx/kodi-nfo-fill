@@ -1,5 +1,6 @@
 package ru.java.fun.service;
 
+import org.xml.sax.InputSource;
 import ru.java.fun.nfo.BaseNfo;
 import ru.java.fun.nfo.EpisodeNfo;
 import ru.java.fun.nfo.MovieNfo;
@@ -9,10 +10,7 @@ import ru.java.fun.util.FileUtil;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Marshaller;
-import java.io.IOException;
-import java.io.Reader;
-import java.io.UncheckedIOException;
-import java.io.Writer;
+import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
@@ -69,24 +67,20 @@ public class NfoFiles {
         return load(nfo, MovieNfo.class);
     }
 
-    public static MovieNfo load(Reader reader) {
-        return unmarshall(reader, MovieNfo.class);
-    }
-
     private static <T> T load(Path nfo, Class<T> objectClass) {
-        try (Reader reader = Files.newBufferedReader(nfo, UTF_8)) {
-            return unmarshall(reader, objectClass);
+        try (InputStream stream = Files.newInputStream(nfo)) {
+            return unmarshall(new InputSource(stream), objectClass);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
     }
 
-    private static <T> T unmarshall(Reader reader, Class<T> objectClass) {
+    private static <T> T unmarshall(InputSource source, Class<T> objectClass) {
         try {
             JAXBContext ctx = JAXBContext.newInstance(objectClass);
             var unmarshaller = ctx.createUnmarshaller();
             //noinspection unchecked
-            return (T) unmarshaller.unmarshal(reader);
+            return (T) unmarshaller.unmarshal(source);
         } catch (JAXBException e) {
             throw new RuntimeException(e);
         }
