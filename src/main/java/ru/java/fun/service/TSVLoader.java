@@ -1,23 +1,34 @@
 package ru.java.fun.service;
 
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVParser;
+import org.apache.commons.csv.CSVRecord;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
+
 import ru.java.fun.service.model.Episode;
 import ru.java.fun.service.model.Season;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.Reader;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
-import java.util.*;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.TreeMap;
 import java.util.stream.Collectors;
 
-import static ru.java.fun.service.TSVSaver.*;
+import static ru.java.fun.service.TSVSaver.DESCRIPTION;
+import static ru.java.fun.service.TSVSaver.EPISODE_ID;
+import static ru.java.fun.service.TSVSaver.EPISODE_NAME;
+import static ru.java.fun.service.TSVSaver.EPISODE_NAME_ORIGINAL;
+import static ru.java.fun.service.TSVSaver.PREMIERE;
 
 public class TSVLoader {
 
@@ -48,16 +59,18 @@ public class TSVLoader {
         return null;
     }
 
-    public static List<Season> load(BufferedReader reader) throws IOException {
-        List<String> lines = reader.lines()
-                .collect(Collectors.toList());
-        String[] first = lines.get(0)
-                .split("\t");
-        var header = header(first);
-        var format = premiereFormat(first);
-        Map<Integer, List<Episode>> result = lines.stream()
-                .skip(1)
-                .map(line -> episode(header, format, line))
+    public static List<Season> load(Reader reader) throws IOException {
+        CSVFormat csv = CSVFormat.Builder.create(CSVFormat.TDF)
+                .setIgnoreEmptyLines(true)
+                .setHeader()
+                .setSkipHeaderRecord(true)
+                .build();
+
+        CSVParser parser = csv.parse(reader);
+        var records = parser.getRecords();
+        var premiereData = premiereData(parser.getHeaderMap());
+        Map<Integer, List<Episode>> result = records.stream()
+                .map(line -> episode(premiereData.getLeft(), premiereData.getRight(), line))
                 .filter(Optional::isPresent)
                 .map(Optional::get)
                 .collect(Collectors.groupingBy(Pair::getKey, Collectors.mapping(Pair::getValue, Collectors.toList())));
@@ -67,82 +80,45 @@ public class TSVLoader {
                 .collect(Collectors.toList());
     }
 
-    private static DateTimeFormatter premiereFormat(String[] line) {
-        return Arrays.stream(line)
-                .filter(value -> StringUtils.startsWithIgnoreCase(value, PREMIERE + " "))
-                .map(s -> StringUtils.substringAfter(s, " "))
+    private static Pair<Integer, DateTimeFormatter> premiereData(Map<String, Integer> header) {
+        return header.entrySet()
+                .stream()
+                .filter(value -> StringUtils.startsWithIgnoreCase(value.getKey(), PREMIERE + " "))
+                .map(s -> 
+                    Pair.of(s.getValue(), DateTimeFormatter.ofPattern(StringUtils.substringAfter(s.getKey(), " ")))
+                )
                 .findFirst()
-                .map(DateTimeFormatter::ofPattern)
                 .orElse(null);
-    }
-
-    private static String cutPremiere(String value) {
-        if (StringUtils.startsWithIgnoreCase(value, PREMIERE)) {
-            return PREMIERE;
-        }
-        return value;
-    }
-
-    private static Map<String, Integer> header(String[] line) {
-        AtomicInteger counter = new AtomicInteger(0);
-        return Arrays.stream(line)
-                .map(StringUtils::trim)
-                .map(TSVLoader::cutPremiere)
-                .collect(Collectors.toMap(
-                        s -> s,
-                        s -> counter.getAndIncrement(),
-                        (s1, s2) -> {
-                            throw new IllegalArgumentException("Not unique column name: " + s1);
-                        },
-                        () -> new TreeMap<>(String.CASE_INSENSITIVE_ORDER)
-                ));
     }
 
     private static Optional<Pair<Integer, Episode>> episode(
-            Map<String, Integer> header,
+            int premiereIndex,
             DateTimeFormatter premiereFormat,
-            String line
+            CSVRecord line
     ) {
-        line = line.trim();
-        if (!line.isEmpty()) {
-            Integer indexId = header.get(EPISODE_ID);
-            Integer indexName = header.get(EPISODE_NAME);
-            Integer indexNameOriginal = header.get(EPISODE_NAME_ORIGINAL);
-            Integer indexPremiere = header.get(PREMIERE);
-            Integer indexDescription = header.get(DESCRIPTION);
-            String[] columns = line.split("\t");
-            return EpisodeIdDetector.detect(columns[indexId])
-                    .map(id -> {
-                        String title = get(columns, indexName);
-                        String nameOriginal = get(columns, indexNameOriginal);
-                        String premiere = get(columns, indexPremiere);
-                        String description = get(columns, indexDescription);
-                        OffsetDateTime premiereDateTime;
-                        try {
-                            premiereDateTime = parseDateTime(premiere, premiereFormat);
-                        } catch (DateTimeParseException e) {
-                            premiereDateTime = parseDateTime(premiere, 0);
-                        }
-                        return Pair.of(
-                                id.getSeason(),
-                                new Episode(
-                                        id.getEpisode(),
-                                        title,
-                                        nameOriginal,
-                                        description,
-                                        premiereDateTime
-                                )
-                        );
-                    });
-        }
-        return Optional.empty();
-    }
-
-    private static String get(String[] columns, Integer index) {
-        return Optional.ofNullable(index)
-                .filter(i -> i < columns.length)
-                .map(i -> columns[i])
-                .orElse(null);
+        return EpisodeIdDetector.detect(line.get(EPISODE_ID))
+                .map(id -> {
+                    String title = line.get(EPISODE_NAME);
+                    String nameOriginal = line.get(EPISODE_NAME_ORIGINAL);
+                    String premiere = line.get(premiereIndex);
+                    String description = line.get(DESCRIPTION);
+                    OffsetDateTime premiereDateTime;
+                    try {
+                        premiereDateTime = parseDateTime(premiere, premiereFormat);
+                    } catch (DateTimeParseException e) {
+                        premiereDateTime = parseDateTime(premiere, 0);
+                    }
+                    return Pair.of(
+                            id.getSeason(),
+                            new Episode(
+                                    id.getEpisode(),
+                                    title,
+                                    nameOriginal,
+                                    description,
+                                    premiereDateTime
+                            )
+                    );
+                });
     }
 
 }

@@ -1,5 +1,7 @@
 package ru.java.fun.service;
 
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVPrinter;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.text.StringEscapeUtils;
 import ru.java.fun.service.model.Episode;
@@ -48,33 +50,41 @@ public class TSVSaver {
                 }
             }
         }
+
+
         List<Map.Entry<String, Function<Episode, String>>> usedColumns = columns.stream()
                 .filter(c -> used.contains(c.getKey()))
                 .collect(Collectors.toList());
-        String header = Stream.concat(
+        String[] header = Stream.concat(
                         Stream.of(EPISODE_ID),
                         usedColumns.stream()
                                 .map(Map.Entry::getKey)
                 )
-                .collect(Collectors.joining("\t"));
-        writer.println(header);
+                .toArray(size -> new String[size]);
+        CSVFormat format = CSVFormat.Builder.create(CSVFormat.TDF)
+                .setHeader(header)
+                .setIgnoreEmptyLines(true)
+                .build();
+        CSVPrinter printer = format.print(writer);
+
         for (Season season : seasons) {
             int seasonNumber = season.getNumber();
             for (Episode episode : season.getEpisodes()) {
                 String id = "s" + seasonNumber + "e" + episode.getNumber();
-                String line = Stream.concat(
-                                Stream.of(id),
-                                usedColumns.stream()
-                                        .map(Map.Entry::getValue)
-                                        .map(e -> e.apply(episode))
-                                        .map(StringUtils::defaultString)
-                                        .map(StringEscapeUtils::escapeCsv)
-                        )
-                        .collect(Collectors.joining("\t"));
-                writer.println(line);
+                List<String> line = Stream.concat(
+                        Stream.of(id),
+                        usedColumns.stream()
+                                .map(Map.Entry::getValue)
+                                .map(e -> e.apply(episode))
+                                .map(StringUtils::defaultString)
+                                .map(StringEscapeUtils::escapeCsv)
+                )
+                        .collect(Collectors.toList());
+                printer.printRecord(line);
             }
         }
-        writer.flush();
+        printer.flush();
+        printer.close();
     }
 
 }
