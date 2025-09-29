@@ -96,10 +96,16 @@ public class TSVLoader {
             DateTimeFormatter premiereFormat,
             CSVRecord line
     ) {
+        boolean presentNameOriginal = line.getParser()
+                .getHeaderMap()
+                .containsKey(EPISODE_NAME_ORIGINAL);
         return EpisodeIdDetector.detect(line.get(EPISODE_ID))
                 .map(id -> {
-                    String title = line.get(EPISODE_NAME);
-                    String nameOriginal = line.get(EPISODE_NAME_ORIGINAL);
+                    String name = line.get(EPISODE_NAME);
+                    String nameOriginal = name;
+                    if (presentNameOriginal) {
+                        nameOriginal = line.get(EPISODE_NAME_ORIGINAL);
+                    }
                     String premiere = line.get(premiereIndex);
                     String description = line.get(DESCRIPTION);
                     OffsetDateTime premiereDateTime;
@@ -112,7 +118,7 @@ public class TSVLoader {
                             id.getSeason(),
                             new Episode(
                                     id.getEpisode(),
-                                    title,
+                                    name,
                                     nameOriginal,
                                     description,
                                     premiereDateTime

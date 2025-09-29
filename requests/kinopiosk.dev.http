@@ -1,4 +1,4 @@
-GET https://api.kinopoisk.dev/v1.4/movie/search?query=капитан врунгель
+GET https://api.kinopoisk.dev/v1.4/movie/search?query=Back to the Future - The Animated Series
 X-API-KEY: {{token}}
 
 ###
@@ -6,7 +6,11 @@ GET https://api.kinopoisk.dev/v1.4/movie/79920
 X-API-KEY: {{token}}
 
 ###
-GET https://api.kinopoisk.dev/v1.4/season?movieId=43254&limit=100
+GET https://api.kinopoisk.dev/v1.4/season?movieId=970079&limit=100
+X-API-KEY: {{token}}
+
+### Гриффины
+GET https://api.kinopoisk.dev/v1.4/season?movieId=161101&limit=100
 X-API-KEY: {{token}}
 
 ### Южный парк
