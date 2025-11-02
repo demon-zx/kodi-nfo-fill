@@ -1,6 +1,7 @@
 package ru.java.fun.service.model;
 
 import java.util.List;
+import java.util.Objects;
 
 public class Season {
     private final int number;
@@ -8,7 +9,7 @@ public class Season {
 
     public Season(int number, List<Episode> episodes) {
         this.number = number;
-        this.episodes = episodes;
+        this.episodes = Objects.requireNonNullElse(episodes, List.of());
     }
 
     public int getNumber() {

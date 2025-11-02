@@ -25,7 +25,6 @@ public final class NfoMapper {
         nfo.setSeasonsCount(seasons.size());
         int episodesCount = seasons.stream()
                 .map(Season::getEpisodes)
-                .filter(Objects::nonNull)
                 .mapToInt(List::size)
                 .sum();
         nfo.setEpisodesCount(episodesCount);
