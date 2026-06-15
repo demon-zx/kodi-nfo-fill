@@ -178,8 +178,8 @@ public class NfoService {
     private int notFound(EpisodeId episodeId, Path episodeFile) {
         log.printf(
                 Logger.Level.INFO,
-                "Episode S%02dE%02d NOT found for %s%n",
-                episodeId.getEpisode(),
+                "Episode S%01dE%02d NOT found for %s%n",
+                episodeId.getSeason(),
                 episodeId.getEpisode(),
                 episodeFile.getFileName()
         );
